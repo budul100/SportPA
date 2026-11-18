@@ -585,14 +585,16 @@ const acts = {
   ann(el) { const g = cur(); g.ann[el.dataset.id] = !g.ann[el.dataset.id]; save(); render(); },
   annreset() { cur().ann = {}; save(); render(); },
   'ann-next'() {
-    const g = cur(), side = S.ui.side;
-    const ids = introIds(g, side);
-    const id = ids.find(x => !g.ann[x]);
-    if (!id) { toast('Everyone announced'); return; }
+    const g = cur(), order = ['ref', 'away', 'home'], names = {ref: 'Officials', away: 'Away team', home: 'Home team'};
+    const open = sd => introIds(g, sd).find(x => !g.ann[x]);
+    const nextTab = from => { const k = order.indexOf(from); for (let n = 1; n < order.length; n++) { const sd = order[(k + n) % order.length]; if (open(sd)) return sd; } return null; };
+    const jump = sd => { S.ui.side = sd; save(); render(); window.scrollTo({top: 0, behavior: 'smooth'}); toast('Next: ' + names[sd]); };
+    const side = S.ui.side, id = open(side);
+    if (!id) { const sd = nextTab(side); if (sd) jump(sd); else toast('Everyone announced'); return; }
     g.ann[id] = true; save(); render();
+    if (!open(side)) { const sd = nextTab(side); if (sd) jump(sd); else toast('Everyone announced'); return; }
     const nx = document.querySelector('.intro:not(.done)');
     if (nx) window.scrollTo({top: Math.max(0, nx.getBoundingClientRect().top + window.scrollY - 150), behavior: 'smooth'});
-    else toast('Everyone announced');
   },
   coachfirst() { S.ui.coachFirst = !S.ui.coachFirst; save(); render(); },
   hold() { S.ui.hold = !S.ui.hold; save(); render(); },
