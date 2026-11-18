@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SportPA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#0f1419;--panel:#1a222c;--panel2:#232d3a;--line:#2e3b4b;--text:#e8eef5;--mute:#8fa1b5;--acc:#4da3ff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5a5f;--home:#4da3ff;--away:#ff9f43}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.3 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-height:44px;cursor:pointer}
+button:active{filter:brightness(1.25)}
+button.pri,button.on{background:var(--acc);color:#04121f;border-color:var(--acc);font-weight:600}
+button.danger{border-color:var(--bad);color:var(--bad)}
+input,textarea,select{font:inherit;color:var(--text);background:#0c1117;border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:42px;width:100%}
+textarea{resize:vertical;min-height:90px}
+label{display:block;font-size:13px;color:var(--mute);margin:8px 0 3px}
+nav{display:flex;gap:6px;flex-wrap:wrap;padding:8px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+nav button{padding:6px 12px;min-height:40px}
+nav .sep{width:1px;background:var(--line);margin:0 4px}
+main{padding:12px;max-width:1700px;margin:0 auto}
+h2{margin:4px 0 10px;font-size:20px}
+h3{margin:0 0 8px;font-size:16px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.mute{color:var(--mute)}.small{font-size:13px}
+.warnbox{background:#3a2d12;border:1px solid var(--warn);color:#ffd98a;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:14px}
+.okbox{background:#12301f;border:1px solid var(--ok);color:#9bf0c8;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:14px}
+.badge{display:inline-block;min-width:22px;text-align:center;padding:0 6px;border-radius:6px;font-size:12px;font-weight:700;background:var(--panel2);border:1px solid var(--line)}
+.pill{display:inline-block;padding:0 6px;border-radius:6px;font-size:12px;font-weight:700;margin-right:3px}
+.p-g{background:#1f4a35;color:#9bf0c8}.p-f{background:#4a3f1f;color:#ffd98a}.p-p{background:#4a2326;color:#ffb3b6}
+.team{display:block;width:100%;text-align:left;margin-bottom:6px}
+.pl{display:grid;grid-template-columns:70px auto minmax(110px,1.7fr) minmax(80px,1fr) 44px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.ci{display:grid;grid-template-columns:44px 60px auto minmax(110px,1.7fr) minmax(80px,1fr) 40px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.ci.off{opacity:.45}
+.fl{display:flex;gap:4px;flex-wrap:wrap}
+.fb{padding:0 6px;min-height:40px;min-width:36px;font-weight:700}
+.chk{padding:0;width:40px;height:40px;min-height:40px;font-size:20px}
+input.dup{border-color:var(--warn);background:#3a2d12}
+.pi{border-bottom:1px solid var(--line);padding:6px 0}
+.pi textarea{min-height:56px;margin-top:6px}
+.intro{display:flex;gap:14px;align-items:center;width:100%;text-align:left;padding:10px 14px;margin-bottom:8px;min-height:72px}
+.intro .n{font-size:44px;font-weight:800;min-width:90px;text-align:right}
+.intro .nm{font-size:32px;font-weight:700;line-height:1.1}
+.intro .ph{font-size:18px;color:var(--acc);font-weight:500}
+.intro.done{opacity:.35}
+.intro.done .nm{text-decoration:line-through}
+.top{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.score{font-size:34px;font-weight:800;display:flex;gap:14px;align-items:center}
+.score .h{color:var(--home);font-size:18px;max-width:240px}.score .a{color:var(--away);font-size:18px;max-width:240px}
+.play{display:grid;grid-template-columns:1fr 1fr 350px;gap:10px;align-items:start}
+.play.norb{grid-template-columns:1fr 1fr 310px}
+@media(max-width:1150px){.play,.play.norb{grid-template-columns:1fr 1fr}.play aside{grid-column:1/-1}}
+@media(max-width:700px){.play,.play.norb{grid-template-columns:1fr}}
+.side{position:sticky;top:58px;max-height:calc(100vh - 70px);overflow:auto;padding-right:2px}
+@media(max-width:1150px){.side{position:static;max-height:none}}
+.col h3{display:flex;justify-content:space-between}
+.col.home h3{color:var(--home)}.col.away h3{color:var(--away)}
+.pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px}
+.pc{display:flex;gap:8px;align-items:center;text-align:left;padding:6px 10px;min-height:68px;border-left-width:5px}
+.pc.home{border-left-color:var(--home)}.pc.away{border-left-color:var(--away)}
+.pc .n{font-size:30px;font-weight:800;min-width:46px;text-align:center}
+.pc .nm{font-size:16px;font-weight:600;line-height:1.1}
+.pc .bd{display:block;margin-top:3px}
+.pc.fw{background:#3a2d12}
+.pc.out{background:#4a2326;border-color:var(--bad)}
+.pc.unk{opacity:.8}
+.tm{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;margin-bottom:6px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.tm .tt{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+.tm.warn{background:#4a3a10;border-color:var(--warn);animation:pulse .7s infinite alternate}
+.tm.done{background:#5a1d20;border-color:var(--bad);animation:blink .45s infinite alternate}
+@keyframes pulse{from{background:#4a3a10}to{background:#8a6410}}
+@keyframes blink{from{background:#5a1d20}to{background:#c0282e}}
+.clk{width:100%;font-weight:700;font-size:17px}
+.clk.run{background:#12301f;border-color:var(--ok)}
+.clk.stop{background:#4a2326;border-color:var(--bad)}
+.ev{font-size:14px;padding:5px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:6px;align-items:center}
+.ev button{min-height:32px;padding:0 8px}
+details summary{cursor:pointer;font-weight:600;min-height:32px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#2b3a4d;border:1px solid var(--acc);border-radius:12px;padding:8px 12px;z-index:60;display:none;gap:12px;align-items:center;max-width:94vw}
+#toast.show{display:flex}
+.ritem{display:flex;gap:10px;align-items:flex-start;padding:10px;margin-bottom:6px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);cursor:pointer}
+.ritem .rt{font-size:17px;font-weight:600}
+.ritem .rd{font-size:15px;color:#c9d6e4;white-space:pre-wrap;margin-top:3px}
+.ritem.done{opacity:.4}
+.ritem.done .rt{text-decoration:line-through}
+.ritem.done .rd{display:none}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{flex:1;min-height:40px;padding:4px 8px}
+nav .brand{align-self:center;margin:0 6px 0 4px;font-size:18px;letter-spacing:.3px}
+.navr{margin-left:auto;display:flex;gap:14px;align-items:center}
+.now{font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.nextbtn{position:fixed;right:18px;bottom:18px;z-index:30;min-height:72px;min-width:200px;font-size:22px;font-weight:700;background:var(--acc);color:#04121f;border-color:var(--acc);box-shadow:0 6px 20px #0009}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:45;display:none}
+body.alarm-done #flash{display:block;animation:fdone .45s infinite alternate}
+body.alarm-warn #flash{display:block;animation:fwarn .8s infinite alternate}
+@keyframes fdone{from{background:rgba(255,40,40,.05)}to{background:rgba(255,40,40,.5)}}
+@keyframes fwarn{from{background:rgba(255,176,32,0)}to{background:rgba(255,176,32,.22)}}
+.sc{display:flex;gap:16px;align-items:flex-start;flex:1;justify-content:center;min-width:0}
+.sh{flex:1;min-width:0}
+.sn{font-size:36px;font-weight:800;white-space:nowrap}
+.tn{font-size:18px;font-weight:700}
+.scl{font-size:14px;opacity:.9;margin-top:2px}
+.tm.wait{border-color:var(--acc)}
+.ev.evlast{font-size:18px;font-weight:700;padding:10px 8px;background:var(--panel2);border-radius:8px;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="flash"></div>
+<div id="toast"></div>
+<script>
+'use strict';
+/* ---------- defaults ---------- */
+const KEY = 'sportpa-v1', OLD_KEY = 'pa-lineup-v1';
+const COLORS = ['#3ecf8e', '#4da3ff', '#ffb020', '#ff5a5f', '#b388ff', '#26c6da'];
+const DEF_TAGS = [
+  {code: 'T', label: 'Goalkeeper', c: 0, top: true},
+  {code: 'E', label: 'E', c: 1, top: false},
+  {code: 'K', label: 'Captain', c: 2, top: false}
+];
+const sp0 = (id, name, periods, label, score, pen, fouls, foulLimit) => ({id, name, periods, label, score, pen, fouls, foulLimit});
+const DEF_SPORTS = [
+  sp0('indoor-hockey', 'Indoor Hockey', 2, 'Half', 'Goal', [60, 120, 300], false, 3),
+  sp0('field-hockey', 'Field Hockey', 4, 'Quarter', 'Goal', [120, 300, 600], false, 3),
+  sp0('water-polo', 'Water Polo', 4, 'Quarter', 'Goal', [20], true, 3),
+  sp0('volleyball', 'Volleyball', 5, 'Set', 'Point', [], false, 3),
+  sp0('basketball', 'Basketball', 4, 'Quarter', 'Basket', [], true, 5),
+  sp0('ice-hockey', 'Ice Hockey', 3, 'Period', 'Goal', [120, 300], false, 3),
+  sp0('handball', 'Handball', 2, 'Half', 'Goal', [120], false, 3),
+  sp0('baseball', 'Baseball', 9, 'Inning', 'Run', [], false, 3)
+];
+const PH = [['pre', 'Pre-game'], ['brk', 'Breaks'], ['post', 'Post-game']];
+const DEF_PLAN = {
+  pre: ['Welcome', 'Standings / table', 'Team comparison', 'Introduce officials', 'Introduce away team', 'Introduce home team', 'Sponsors and notices', 'Start of game'],
+  brk: ['Score update', 'Goal scorers', 'Sponsors', 'Next home game', 'Notices'],
+  post: ['Final score', 'Goal scorers', 'Thank you', 'Next home game']
+};
+const OLD_SPORT_IDS = {hockey_halle: 'indoor-hockey', hockey_feld: 'field-hockey', wasserball: 'water-polo', volleyball: 'volleyball', basketball: 'basketball'};
+
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ---------- state ---------- */
+function blank() {
+  return {teams: [], games: [], tags: clone(DEF_TAGS), sports: clone(DEF_SPORTS), templates: {}, cur: null,
+    ui: {view: 'games', team: null, gk: true, side: 'ref', mode: 'goal', pen: null, phase: 'pre', rb: true, evp: false, hold: false, coachFirst: false,
+      draft: {sport: DEF_SPORTS[1].id, home: '', away: '', date: today()}}};
+}
+function mkPlan(spId, S) {
+  const t = S.templates[spId], out = {};
+  PH.forEach(([k]) => { const src = t ? t[k] : DEF_PLAN[k].map(x => ({t: x, d: ''})); out[k] = src.map(i => ({id: uid(), t: i.t, d: i.d || ''})); });
+  return out;
+}
+const toArr = f => Array.isArray(f) ? f : String(f || '').split('').filter(Boolean);
+function migrate(S) {
+  if (!S.tags) S.tags = clone(DEF_TAGS);
+  if (!S.sports) S.sports = clone(DEF_SPORTS);
+  if (!S.templates) S.templates = {};
+  const sid = id => OLD_SPORT_IDS[id] || id;
+  S.teams.forEach(t => t.players.forEach(p => { p.f = toArr(p.f); }));
+  S.games.forEach(g => {
+    g.clk = false;
+    ['home', 'away'].forEach(s => g.roster[s].forEach(e => { e.f = toArr(e.f); }));
+    g.sport = sid(g.sport);
+    if (!g.sp) g.sp = clone(S.sports.find(x => x.id === g.sport) || S.sports[0]);
+    if (!g.plan) g.plan = mkPlan(g.sport, S);
+    if (g.ref == null) g.ref = '';
+  });
+  const d = S.ui.draft; d.sport = sid(d.sport);
+  if (!S.sports.find(x => x.id === d.sport)) d.sport = S.sports[0].id;
+  if (!['ref', 'away', 'home'].includes(S.ui.side)) S.ui.side = 'ref';
+  if (!['pre', 'brk', 'post'].includes(S.ui.phase)) S.ui.phase = 'pre';
+  if (S.ui.rb == null) S.ui.rb = true;
+  if (S.ui.evp == null) S.ui.evp = false;
+  if (S.ui.hold == null) S.ui.hold = false;
+  if (S.ui.coachFirst == null) S.ui.coachFirst = false;
+  return S;
+}
+let storageOK = true;
+function load() {
+  const b = blank();
+  try {
+    const r = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY);
+    if (r) { const o = JSON.parse(r); return migrate(Object.assign(b, o, {ui: Object.assign(b.ui, o.ui || {})})); }
+  } catch (e) { storageOK = false; }
+  return b;
+}
+let S = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { storageOK = false; } }
+const cur = () => S.games.find(g => g.id === S.cur) || null;
+const team = () => S.teams.find(t => t.id === S.ui.team) || null;
+const spOf = g => g.sp || S.sports[0];
+
+/* ---------- helpers ---------- */
+const tagOf = c => S.tags.find(t => t.code === c);
+const tagCol = c => COLORS[(tagOf(c) ? tagOf(c).c : 5) % COLORS.length];
+function normF(arr) {
+  const u = [...new Set(arr)], codes = S.tags.map(t => t.code);
+  return u.sort((a, b) => { const ia = codes.indexOf(a), ib = codes.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+}
+const toggleF = (arr, c) => normF(arr.includes(c) ? arr.filter(x => x !== c) : arr.concat(c));
+function badge(c) { const col = tagCol(c); return '<span class="badge" title="' + esc(tagOf(c) ? tagOf(c).label : c) + '" style="background:' + col + '33;border-color:' + col + ';color:' + col + '">' + esc(c) + '</span>'; }
+function tagBtn(c, on, attrs) {
+  const col = tagCol(c);
+  return '<button class="fb" title="' + esc(tagOf(c) ? tagOf(c).label : c) + '" style="' + (on ? 'background:' + col + ';border-color:' + col + ';color:#04121f' : '') + '" ' + attrs + '>' + esc(c) + '</button>';
+}
+const numOf = e => (e.n === '' || e.n == null || isNaN(parseInt(e.n, 10))) ? 1e9 : parseInt(e.n, 10);
+function ordered(list) {
+  const top = e => (S.ui.gk && e.f.some(c => tagOf(c) && tagOf(c).top)) ? 0 : 1;
+  return [...list].sort((a, b) => (top(a) - top(b)) || (numOf(a) - numOf(b)) || a.name.localeCompare(b.name));
+}
+function dupSet(list) {
+  const c = {}; list.filter(e => e.on !== false && e.n).forEach(e => { c[e.n] = (c[e.n] || 0) + 1; });
+  return new Set(Object.keys(c).filter(k => c[k] > 1));
+}
+const lastName = n => { const p = String(n).trim().split(/\s+/); return p[p.length - 1] || ''; };
+const fmtDur = s => s >= 60 ? (s / 60) + ' min' : s + ' s';
+const fmtT = ms => { const s = Math.ceil(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const hms = ts => { const d = new Date(ts); return [d.getHours(), d.getMinutes(), d.getSeconds()].map(x => String(x).padStart(2, '0')).join(':'); };
+const refs = g => String(g.ref || '').split(/[,\/\n]+/).map(s => s.trim()).filter(Boolean);
+function arm(el, txt) {
+  if (el.dataset.armed === '1') return true;
+  el.dataset.armed = '1'; el._o = el.textContent; el.textContent = txt || 'Sure?';
+  setTimeout(() => { if (el.isConnected) { el.dataset.armed = ''; el.textContent = el._o; } }, 3000);
+  return false;
+}
+let toastT;
+function toast(msg, undo) {
+  const t = $('#toast');
+  t.innerHTML = '<span>' + esc(msg) + '</span>' + (undo ? '<button data-act="undo">Undo</button>' : '');
+  t.className = 'show'; clearTimeout(toastT); toastT = setTimeout(() => { t.className = ''; }, 4500);
+}
+
+/* ---------- roster parser ---------- */
+function parseRoster(text) {
+  const codes = S.tags.map(t => t.code);
+  const raw = [];
+  for (const line of text.split(/\r?\n/)) for (const c of line.split('\t')) {
+    const t = c.replace(/ /g, ' ').replace(/\s+/g, ' ').trim(); if (t) raw.push(t);
+  }
+  const tk = [];
+  for (const t of raw) {
+    let r = t, m = r.match(/^(\d{1,3})\s+(.+)$/);
+    if (m) { tk.push(m[1]); r = m[2]; }
+    while ((m = r.match(/^(\S+)\s+(.+)$/)) && codes.includes(m[1])) { tk.push(m[1]); r = m[2]; }
+    tk.push(r);
+  }
+  const isNum = t => /^\d{1,3}$/.test(t);
+  const isFl = t => { const p = t.split(/[\s,\/]+/).filter(Boolean); return p.length > 0 && p.every(x => codes.includes(x)); };
+  let teamName = '', mode = 'p', pn = null, pf = [];
+  const players = [], staff = [], warn = [];
+  for (let i = 0; i < tk.length; i++) {
+    const t = tk[i], nxt = tk[i + 1];
+    if (/^(trainer|coach|coaches|staff|betreuer)s?:?$/i.test(t)) { mode = 's'; pn = null; pf = []; continue; }
+    if (isNum(t)) { mode = 'p'; pn = t; continue; }
+    if (isFl(t)) { pf = pf.concat(t.split(/[\s,\/]+/).filter(Boolean)); continue; }
+    if (mode === 's') {
+      if (nxt && isNum(nxt)) {
+        if (t.toLowerCase() === teamName.toLowerCase()) { mode = 'p'; continue; }
+        warn.push('Another team block "' + t + '" was ignored'); break;
+      }
+      staff.push(t); continue;
+    }
+    if (!players.length && pn === null && !teamName && nxt && isNum(nxt)) { teamName = t; continue; }
+    if (teamName && pn === null && t.toLowerCase() === teamName.toLowerCase() && nxt && isNum(nxt)) continue;
+    players.push({name: t, n: pn || '', f: pf}); pn = null; pf = [];
+  }
+  const seen = new Map(), out = []; let removed = 0;
+  for (const p of players) {
+    p.f = normF(p.f);
+    const k = p.n + '|' + p.name.toLowerCase();
+    if (seen.has(k)) { removed++; const q = seen.get(k); q.f = normF(q.f.concat(p.f)); continue; }
+    seen.set(k, p); out.push(p);
+  }
+  const cn = {}, cm = {};
+  out.forEach(p => { if (p.n) cn[p.n] = (cn[p.n] || 0) + 1; cm[p.name.toLowerCase()] = (cm[p.name.toLowerCase()] || 0) + 1; });
+  const dn = Object.keys(cn).filter(k => cn[k] > 1), dm = out.filter(p => cm[p.name.toLowerCase()] > 1).map(p => p.name);
+  if (dn.length) warn.push('Duplicate numbers: ' + dn.join(', '));
+  if (dm.length) warn.push('Duplicate names: ' + [...new Set(dm)].join(', '));
+  const nn = out.filter(p => !p.n).length; if (nn) warn.push(nn + ' without number');
+  if (removed) warn.push(removed + ' repeated entries removed');
+  return {team: teamName, players: out, staff: [...new Set(staff)], warn};
+}
+
+/* ---------- views ---------- */
+function nav() {
+  const v = S.ui.view, g = cur();
+  const b = (k, t) => '<button data-act="view" data-v="' + k + '" class="' + (v === k ? 'on' : '') + '">' + t + '</button>';
+  return '<nav><b class="brand">SportPA</b>' + b('games', 'Games') + b('teams', 'Teams') + b('settings', 'Settings') + '<span class="sep"></span>' +
+    (g ? b('plan', 'Schedule') + b('checkin', 'Check-in') + b('intro', 'Lineups') + b('play', 'Game') : '') +
+    '<span class="sep"></span>' + b('data', 'Data') +
+    '<span class="navr">' + (g ? '<span class="mute small">' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</span>' : '') + '<b id="now" class="now"></b></span></nav>';
+}
+
+function viewGames() {
+  const d = S.ui.draft;
+  const opt = sel => '<option value="">Choose team</option>' + S.teams.map(t => '<option value="' + t.id + '"' + (t.id === sel ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('');
+  const list = S.games.map(g => '<div class="card row"><div class="grow"><b>' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</b><div class="mute small">' + esc(g.date) + ' · ' + esc(spOf(g).name) + ' · ' + score(g, 'home') + ':' + score(g, 'away') + '</div></div>' +
+    '<button class="pri" data-act="gsel" data-id="' + g.id + '">Open</button><button class="danger" data-act="gdel" data-id="' + g.id + '">Delete</button></div>').join('') || '<div class="mute">No games yet.</div>';
+  return '<h2>Games</h2><div class="grid2"><div><div class="card"><h3>New game</h3>' +
+    '<label>Sport</label><select data-inp="draft" data-k="sport">' + S.sports.map(s => '<option value="' + esc(s.id) + '"' + (d.sport === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select>' +
+    '<label>Home</label><select data-inp="draft" data-k="home">' + opt(d.home) + '</select>' +
+    '<label>Away</label><select data-inp="draft" data-k="away">' + opt(d.away) + '</select>' +
+    '<label>Date</label><input type="date" value="' + esc(d.date) + '" data-inp="draft" data-k="date">' +
+    '<div style="margin-top:10px"><button class="pri" data-act="newgame">Create game</button></div>' +
+    (S.teams.length < 2 ? '<div class="warnbox">Create two teams first (Teams tab), or load sample teams under Data.</div>' : '') +
+    '</div></div><div>' + list + '</div></div>';
+}
+
+let impMsg = '';
+function viewTeams() {
+  const t = team();
+  const list = S.teams.map(x => '<button class="team ' + (t && t.id === x.id ? 'on' : '') + '" data-act="tsel" data-id="' + x.id + '">' + esc(x.name) + ' <span class="mute small">(' + x.players.length + ')</span></button>').join('') || '<div class="mute">No teams yet.</div>';
+  let ed = '<div class="mute" style="margin-bottom:12px">Select a team on the left, or import one below.</div>';
+  if (t) {
+    const rows = t.players.map(p => '<div class="pl"><input inputmode="numeric" placeholder="No." value="' + esc(p.n) + '" data-inp="tp" data-k="n" data-id="' + p.id + '">' +
+      '<span class="fl">' + S.tags.map(g => tagBtn(g.code, p.f.includes(g.code), 'data-act="tpflag" data-f="' + esc(g.code) + '" data-id="' + p.id + '"')).join('') + '</span>' +
+      '<input placeholder="Name" value="' + esc(p.name) + '" data-inp="tp" data-k="name" data-id="' + p.id + '">' +
+      '<input placeholder="Say as" value="' + esc(p.ph || '') + '" data-inp="tp" data-k="ph" data-id="' + p.id + '">' +
+      '<button data-act="tpdel" data-id="' + p.id + '">×</button></div>').join('');
+    ed = '<div class="card"><label>Team name</label><input value="' + esc(t.name) + '" data-inp="tf" data-k="name">' +
+      '<label>Coaches / staff</label><input value="' + esc(t.staff || '') + '" data-inp="tf" data-k="staff">' +
+      '<h3 style="margin-top:12px">Roster (' + t.players.length + ')</h3>' + rows +
+      '<div class="row" style="margin-top:8px"><button data-act="tpadd">+ Player</button><button class="danger" data-act="tdel">Delete team</button></div></div>';
+  }
+  const imp = '<div class="card"><h3>Import roster</h3><div class="mute small">Copy a table from Word or a web page and paste it here. Number, tags, name and coaches are recognised.</div>' +
+    '<textarea id="imp" placeholder="Number, tags, name ..." style="min-height:120px;margin-top:8px"></textarea>' +
+    '<div class="row" style="margin-top:8px"><button class="pri" data-act="timp" data-m="new">As new team</button>' +
+    (t ? '<button data-act="timp" data-m="replace">Replace roster</button><button data-act="timp" data-m="append">Append</button>' : '') + '</div>' + impMsg + '</div>';
+  return '<h2>Teams</h2><div class="grid2" style="grid-template-columns:260px 1fr"><div>' + list + '</div><div>' + ed + imp + '</div></div>';
+}
+
+function viewSettings() {
+  const tags = S.tags.map((t, i) => '<div class="row" style="margin-bottom:6px"><input style="width:80px" value="' + esc(t.code) + '" data-inp="tag" data-i="' + i + '" data-k="code" placeholder="Code">' +
+    '<input class="grow" style="width:auto" value="' + esc(t.label) + '" data-inp="tag" data-i="' + i + '" data-k="label" placeholder="Label">' +
+    '<button data-act="tag-col" data-i="' + i + '" style="background:' + COLORS[t.c % COLORS.length] + ';min-width:44px"></button>' +
+    '<button class="' + (t.top ? 'on' : '') + '" data-act="tag-top" data-i="' + i + '">Priority</button>' +
+    '<button class="danger" data-act="tag-del" data-i="' + i + '">×</button></div>').join('');
+  const sports = S.sports.map(s => '<div class="card" style="background:var(--panel2)"><div class="row"><input class="grow" style="width:auto" value="' + esc(s.name) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="name"><button class="danger" data-act="sp-del" data-id="' + esc(s.id) + '">Delete</button></div>' +
+    '<div class="grid2" style="margin-top:4px"><div><label>Number of periods</label><input type="number" min="1" value="' + s.periods + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="periods">' +
+    '<label>Period name (Half, Quarter, Set, Inning ...)</label><input value="' + esc(s.label) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="label">' +
+    '<label>Scoring name (Goal, Point, Run ...)</label><input value="' + esc(s.score) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="score"></div>' +
+    '<div><label>Penalty durations in seconds, comma separated (empty = no penalty timers)</label><input value="' + esc(s.pen.join(', ')) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="pen">' +
+    '<label>Fouls per player</label><div class="row"><button class="' + (s.fouls ? 'on' : '') + '" data-act="sp-fouls" data-id="' + esc(s.id) + '">' + (s.fouls ? 'Tracked' : 'Off') + '</button>' +
+    '<input type="number" min="1" style="width:90px" value="' + s.foulLimit + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="foulLimit"><span class="mute small">fouls until out</span></div></div></div></div>').join('');
+  return '<h2>Settings</h2><div class="grid2"><div><div class="card"><h3>Player tags</h3><div class="mute small" style="margin-bottom:8px">Short codes shown next to a player, e.g. goalkeeper or captain. The code is also what the roster import recognises. Priority tags are listed first in lineups.</div>' + tags +
+    '<button data-act="tag-add" style="margin-top:6px">+ Tag</button></div></div>' +
+    '<div><div class="card"><h3>Sports</h3><div class="mute small" style="margin-bottom:8px">Changes apply to new games. Existing games keep the settings they were created with.</div>' + sports + '<button data-act="sp-add">+ Sport</button></div></div></div>';
+}
+
+function ciSide(g, side) {
+  const L = g.roster[side], dups = dupSet(L), on = L.filter(e => e.on).length;
+  const rows = L.map(e => '<div class="ci ' + (e.on ? '' : 'off') + '"><button class="chk ' + (e.on ? 'on' : '') + '" data-act="ci-on" data-side="' + side + '" data-id="' + e.id + '">' + (e.on ? '✓' : '') + '</button>' +
+    '<input class="' + (e.on && dups.has(e.n) ? 'dup' : '') + '" inputmode="numeric" placeholder="No." value="' + esc(e.n) + '" data-inp="ci-f" data-rr="1" data-k="n" data-side="' + side + '" data-id="' + e.id + '">' +
+    '<span class="fl">' + S.tags.map(t => tagBtn(t.code, e.f.includes(t.code), 'data-act="ci-flag" data-f="' + esc(t.code) + '" data-side="' + side + '" data-id="' + e.id + '"')).join('') + '</span>' +
+    '<input placeholder="Name" value="' + esc(e.name) + '" data-inp="ci-f" data-k="name" data-side="' + side + '" data-id="' + e.id + '">' +
+    '<input placeholder="Say as" value="' + esc(e.ph || '') + '" data-inp="ci-f" data-k="ph" data-side="' + side + '" data-id="' + e.id + '">' +
+    '<button data-act="ci-del" data-side="' + side + '" data-id="' + e.id + '">×</button></div>').join('');
+  return '<div class="card"><h3 style="color:var(--' + side + ')">' + (side === 'home' ? 'Home' : 'Away') + ': ' + esc(g[side].name) + ' <span class="mute small">' + on + ' of ' + L.length + ' present</span></h3>' +
+    '<label>Coaches / staff</label><input value="' + esc(g[side].staff) + '" data-inp="gs" data-side="' + side + '">' +
+    (dups.size ? '<div class="warnbox">Duplicate number: ' + [...dups].map(esc).join(', ') + '</div>' : '') + '<div style="margin-top:8px">' + rows + '</div>' +
+    '<div class="row" style="margin-top:8px"><button data-act="ci-add" data-side="' + side + '">+ Player</button><button data-act="ci-sort" data-side="' + side + '">Sort by number</button><button data-act="ci-save" data-side="' + side + '">Save numbers to team</button></div></div>';
+}
+function viewCheckin() {
+  const g = cur();
+  return '<h2>Check-in</h2><div class="card"><label style="margin-top:0">Officials / referees (comma separated)</label><input value="' + esc(g.ref) + '" data-inp="g" data-k="ref"></div>' +
+    '<div class="grid2">' + ciSide(g, 'away') + ciSide(g, 'home') + '</div>';
+}
+
+function viewPlan() {
+  const g = cur();
+  const sec = ([k, n]) => '<div class="card"><h3>' + n + '</h3>' + g.plan[k].map((it, i) => '<div class="pi"><div class="row"><input class="grow" style="width:auto" placeholder="Title" value="' + esc(it.t) + '" data-inp="pi" data-ph="' + k + '" data-id="' + it.id + '" data-k="t">' +
+    '<button data-act="p-up" data-ph="' + k + '" data-id="' + it.id + '"' + (i === 0 ? ' disabled' : '') + '>↑</button><button data-act="p-down" data-ph="' + k + '" data-id="' + it.id + '"' + (i === g.plan[k].length - 1 ? ' disabled' : '') + '>↓</button>' +
+    '<button class="danger" data-act="p-del" data-ph="' + k + '" data-id="' + it.id + '">×</button></div>' +
+    '<textarea placeholder="Details: sponsor text, standings, notes ..." data-inp="pi" data-ph="' + k + '" data-id="' + it.id + '" data-k="d">' + esc(it.d) + '</textarea></div>').join('') +
+    '<button data-act="p-add" data-ph="' + k + '" style="margin-top:8px">+ Add item</button></div>';
+  return '<h2>Schedule</h2><div class="mute small" style="margin-bottom:10px">Your script for this game. Items and their details show up as a checklist in the Game tab. Breaks are checked off separately for every ' + esc(spOf(g).label.toLowerCase()) + '.</div>' +
+    '<div class="grid2"><div>' + sec(PH[0]) + sec(PH[2]) + '</div><div>' + sec(PH[1]) +
+    '<div class="card"><button data-act="p-tpl">Save as template for ' + esc(spOf(g).name) + '</button><div class="mute small" style="margin-top:6px">New ' + esc(spOf(g).name) + ' games start with this schedule.</div></div></div></div>';
+}
+
+const staffList = (g, side) => String(g[side].staff || '').split(/[,\/\n]+/).map(x => x.trim()).filter(Boolean);
+function introIds(g, side) {
+  if (side === 'ref') return refs(g).map((_, i) => 'ref:' + i);
+  const co = staffList(g, side).map((_, i) => 'coach:' + side + ':' + i), pl = ordered(g.roster[side].filter(e => e.on)).map(e => e.id);
+  return S.ui.coachFirst ? co.concat(pl) : pl.concat(co);
+}
+function viewIntro() {
+  const g = cur(), side = S.ui.side;
+  const tabs = '<div class="row" style="margin-bottom:10px"><button class="' + (side === 'ref' ? 'on' : '') + '" data-act="iside" data-side="ref">Officials</button>' +
+    '<button class="' + (side === 'away' ? 'on' : '') + '" data-act="iside" data-side="away">Away: ' + esc(g.away.name) + '</button>' +
+    '<button class="' + (side === 'home' ? 'on' : '') + '" data-act="iside" data-side="home">Home: ' + esc(g.home.name) + '</button><span class="grow"></span>' +
+    (side !== 'ref' ? '<button class="' + (S.ui.coachFirst ? 'on' : '') + '" data-act="coachfirst">Coaches first</button>' : '') +
+    '<button class="' + (S.ui.gk ? 'on' : '') + '" data-act="gk">Priority tags first</button><button data-act="annreset">Reset checks</button></div>';
+  if (side === 'ref') {
+    const R = refs(g);
+    return tabs + (R.map((n, i) => '<button class="intro ' + (g.ann['ref:' + i] ? 'done' : '') + '" data-act="ann" data-id="ref:' + i + '"><span class="nm">' + esc(n) + '</span></button>').join('') ||
+      '<div class="mute">No officials entered yet (Check-in tab).</div>');
+  }
+  const coaches = staffList(g, side).map((n, i) => '<button class="intro ' + (g.ann['coach:' + side + ':' + i] ? 'done' : '') + '" data-act="ann" data-id="coach:' + side + ':' + i + '"><span class="n" style="font-size:22px;color:var(--mute)">Coach</span><span class="nm">' + esc(n) + '</span></button>').join('');
+  const L = ordered(g.roster[side].filter(e => e.on));
+  const rows = L.map(e => '<button class="intro ' + (g.ann[e.id] ? 'done' : '') + '" data-act="ann" data-id="' + e.id + '"><span class="n">' + esc(e.n || '–') + '</span><span><span class="nm">' + esc(e.name) + '</span> ' +
+    e.f.map(badge).join(' ') + (e.ph ? '<div class="ph">' + esc(e.ph) + '</div>' : '') + '</span></button>').join('') || '<div class="mute">No players marked as present.</div>';
+  return tabs + (S.ui.coachFirst ? coaches + rows : rows + coaches);
+}
+
+function score(g, side) { return g.ev.filter(e => e.t === 'goal' && e.s === side).length; }
+const cnt = (g, id, t) => g.ev.filter(e => e.t === t && e.e === id).length;
+function who(g, ev) {
+  if (ev.e === '?') return 'Unknown';
+  const e = g.roster[ev.s].find(x => x.id === ev.e);
+  return e ? ((e.n ? '#' + e.n + ' ' : '') + e.name) : '?';
+}
+function shortWho(g, side, id) {
+  if (id === '?') return '?';
+  const e = g.roster[side].find(x => x.id === id);
+  return e ? ((e.n ? '#' + e.n + ' ' : '') + lastName(e.name)) : '?';
+}
+function tmClass(t) { if (t.st === 'done') return 'done'; if (t.st === 'wait') return 'wait'; const g = cur(); return (g && g.clk && t.rem <= Math.min(10000, t.dur * 0.25)) ? 'warn' : ''; }
+function tmLabel(t) {
+  return '<b>' + (t.side === 'home' ? 'H' : 'A') + ' ' + esc(t.label) + '</b>' +
+    (t.st === 'done' ? '<div class="small" style="color:#ffd0d2;font-weight:700">Announce return!</div>' : t.st === 'wait' ? '<div class="small" style="color:var(--acc);font-weight:700">Waiting for restart</div>' : '');
+}
+function tmBtns(t) {
+  return t.st === 'wait' ? '<button class="pri" data-act="tm-start" data-id="' + t.id + '">Start</button><button data-act="tmx" data-id="' + t.id + '">×</button>'
+    : '<button data-act="tmx" data-id="' + t.id + '">' + (t.st === 'done' ? 'OK' : '×') + '</button>';
+}
+function timersHtml(g) {
+  return g.tm.map(t => '<div class="tm ' + tmClass(t) + '" data-tid="' + t.id + '"><div>' + tmLabel(t) + '</div><div class="tt">' + fmtT(t.rem) + '</div><div class="row tmb" style="flex-wrap:nowrap">' + tmBtns(t) + '</div></div>').join('') || '<div class="mute small">No active penalties</div>';
+}
+function pcard(g, side, e, sp) {
+  const goals = cnt(g, e.id, 'goal'), fouls = cnt(g, e.id, 'foul'), pens = cnt(g, e.id, 'pen');
+  const out = sp.fouls && fouls >= sp.foulLimit, fw = sp.fouls && fouls === sp.foulLimit - 1 && fouls > 0;
+  return '<button class="pc ' + side + (out ? ' out' : fw ? ' fw' : '') + '" data-act="tap" data-side="' + side + '" data-id="' + e.id + '"><span class="n">' + esc(e.n || '–') + '</span><span class="nm">' + esc(e.name) +
+    '<span class="bd">' + e.f.map(c => badge(c) + ' ').join('') +
+    (goals ? '<span class="pill p-g">' + esc(sp.score) + ' ' + goals + '</span>' : '') + (fouls ? '<span class="pill p-f">Foul ' + fouls + (out ? ' OUT' : '') + '</span>' : '') + (pens ? '<span class="pill p-p">Pen ' + pens + '</span>' : '') + '</span></span></button>';
+}
+const rKey = (g, ph, id) => ph + (ph === 'brk' ? g.per : '') + '|' + id;
+function rbPanel(g) {
+  const ph = S.ui.phase, items = g.plan[ph], sp = spOf(g);
+  const done = items.filter(i => g.chk[rKey(g, ph, i.id)]).length;
+  return '<div class="card"><div class="tabs">' + PH.map(p => '<button class="' + (ph === p[0] ? 'on' : '') + '" data-act="phase" data-p="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
+    '<div class="mute small" style="margin-bottom:8px">' + done + ' of ' + items.length + ' announced' + (ph === 'brk' ? ' · after ' + esc(sp.label.toLowerCase()) + ' ' + g.per : '') + '</div>' +
+    items.map(i => { const d = g.chk[rKey(g, ph, i.id)]; return '<div class="ritem ' + (d ? 'done' : '') + '" data-act="rchk" data-id="' + i.id + '"><span class="badge">' + (d ? '✓' : '') + '</span><div><div class="rt">' + esc(i.t || '(untitled)') + '</div>' + (i.d ? '<div class="rd">' + esc(i.d) + '</div>' : '') + '</div></div>'; }).join('') +
+    '<div class="row" style="margin-top:8px"><input id="qa" class="grow" style="width:auto" placeholder="Add item ..."><button data-act="p-qadd">Add</button></div>' +
+    '<div class="row" style="margin-top:8px"><button data-act="rreset">Reset checks</button><button data-act="view" data-v="plan">Edit schedule</button></div></div>';
+}
+function viewPlay() {
+  const g = cur(), sp = spOf(g);
+  if ((S.ui.mode === 'foul' && !sp.fouls) || (S.ui.mode === 'pen' && !sp.pen.length)) S.ui.mode = 'goal';
+  if (!sp.pen.includes(S.ui.pen)) S.ui.pen = sp.pen[0] || null;
+  const mb = (k, t) => '<button class="' + (S.ui.mode === k ? 'on' : '') + '" data-act="mode" data-m="' + k + '">' + t + '</button>';
+  const unk = side => g.ev.filter(e => e.s === side && e.e === '?' && e.t === 'goal').length;
+  const col = side => '<div class="col ' + side + '"><h3><span>' + (side === 'home' ? 'Home' : 'Away') + ': ' + esc(g[side].name) + '</span><span>' + score(g, side) + '</span></h3><div class="pcards">' +
+    ordered(g.roster[side].filter(e => e.on)).map(e => pcard(g, side, e, sp)).join('') +
+    '<button class="pc ' + side + ' unk" data-act="tap" data-side="' + side + '" data-id="?"><span class="n">?</span><span class="nm">Unknown<span class="bd">' + (unk(side) ? '<span class="pill p-g">' + esc(sp.score) + ' ' + unk(side) + '</span>' : '') + '</span></span></button></div></div>';
+  const ev = g.ev.slice(-8).reverse().map((e, i) => '<div class="ev' + (i === 0 ? ' evlast' : '') + '"><span>' + hms(e.ts) + ' ' + (e.s === 'home' ? 'H' : 'A') + ' ' + esc(who(g, e)) + ' · ' + ({goal: esc(sp.score), foul: 'Foul', pen: 'Pen ' + fmtDur(e.d || 0)}[e.t]) + ' (' + e.p + ')</span><button data-act="evdel" data-id="' + e.id + '">×</button></div>').join('') || '<div class="mute small">No events yet</div>';
+  const scorers = side => {
+    const m = {}; g.ev.filter(e => e.t === 'goal' && e.s === side).forEach(e => { m[e.e] = (m[e.e] || 0) + 1; });
+    const key = id => { if (id === '?') return 1e10; const e = g.roster[side].find(x => x.id === id); return e ? numOf(e) : 1e9; };
+    return Object.keys(m).sort((x, y) => (m[y] - m[x]) || (key(x) - key(y))).map(id => shortWho(g, side, id) + (m[id] > 1 ? ' (' + m[id] + ')' : '')).join(', ') || '–';
+  };
+  return '<div class="card top"><div class="row"><button data-act="per" data-d="-1">−</button><b style="font-size:20px">' + esc(sp.label) + ' ' + g.per + '/' + sp.periods + '</b><button data-act="per" data-d="1">+</button></div>' +
+    '<div class="sc"><div class="sh" style="text-align:right"><div class="tn" style="color:var(--home)">' + esc(g.home.name) + '</div><div class="scl">' + esc(scorers('home')) + '</div></div><div class="sn">' + score(g, 'home') + ' : ' + score(g, 'away') + '</div><div class="sh"><div class="tn" style="color:var(--away)">' + esc(g.away.name) + '</div><div class="scl">' + esc(scorers('away')) + '</div></div></div>' +
+    '<div class="row">' + mb('goal', esc(sp.score)) + (sp.fouls ? mb('foul', 'Foul') : '') + (sp.pen.length ? mb('pen', 'Penalty') : '') +
+    (S.ui.mode === 'pen' ? sp.pen.map(d => '<button class="' + (S.ui.pen === d ? 'on' : '') + '" data-act="pdur" data-d="' + d + '">' + fmtDur(d) + '</button>').join('') : '') +
+    (S.ui.mode !== 'goal' ? '<button class="' + (S.ui.hold ? 'on' : '') + '" data-act="hold">Keep mode</button>' : '') +
+    '<button class="' + (S.ui.rb ? 'on' : '') + '" data-act="rbtoggle">Schedule</button><button class="' + (S.ui.evp ? 'on' : '') + '" data-act="evtoggle">Events</button></div></div>' +
+    '<div class="play ' + (S.ui.rb ? '' : 'norb') + '">' + col('home') + col('away') + '<aside class="side">' +
+    '<div class="card"><button class="clk ' + (g.clk ? 'run' : 'stop') + '" data-act="clk">' + (g.clk ? 'Play running (tap when play stops)' : 'Play stopped (tap when play resumes)') + '</button><div id="timers" style="margin-top:8px">' + timersHtml(g) + '</div></div>' +
+    (S.ui.rb ? rbPanel(g) : '') +
+    (S.ui.evp ? '<div class="card"><h3>Events</h3>' + ev + '</div>' : '') + '</aside></div>';
+}
+
+function viewData() {
+  return '<h2>Data</h2><div class="grid2"><div><div class="card"><h3>Backup</h3>' +
+    (storageOK ? '' : '<div class="warnbox">Local storage is not available. Data is lost when the page closes. Please export.</div>') +
+    '<div class="row"><button class="pri" data-act="exp">Save as file</button><button data-act="expcopy">Copy to clipboard</button></div>' +
+    '<label>Load backup file (replaces everything)</label><input type="file" accept=".json,application/json" id="impfile">' +
+    '<label>Or paste JSON</label><textarea id="impdata" placeholder="{...}"></textarea>' +
+    '<div style="margin-top:8px"><button class="danger" data-act="impdata">Import (replaces everything)</button></div>' + dataMsg + '</div></div>' +
+    '<div><div class="card"><h3>Sample data</h3><div class="mute small">Two fictional teams to try things out (with a duplicate number and a player without number).</div><div style="margin-top:8px"><button data-act="sample">Add sample teams</button></div></div>' +
+    '<div class="card"><h3>Delete everything</h3><button class="danger" data-act="wipe">Delete all data</button></div></div></div>';
+}
+let dataMsg = '';
+
+const VIEWS = {games: viewGames, teams: viewTeams, settings: viewSettings, plan: viewPlan, checkin: viewCheckin, intro: () => viewIntro() + '<div style="height:110px"></div><button class="nextbtn" data-act="ann-next">Announce next ▶</button>', play: viewPlay, data: viewData};
+
+/* ---------- render ---------- */
+let wl = null;
+async function wake() { try { if ('wakeLock' in navigator && !wl) { wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => { wl = null; }); } } catch (e) { /* not available */ } }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.ui.view === 'play') wake(); });
+function render() {
+  if (!cur() && ['plan', 'checkin', 'intro', 'play'].includes(S.ui.view)) S.ui.view = 'games';
+  const y = window.scrollY, sideEl = document.querySelector('.side'), sy = sideEl ? sideEl.scrollTop : 0;
+  $('#app').innerHTML = nav() + '<main>' + VIEWS[S.ui.view]() + '</main>';
+  window.scrollTo(0, y);
+  const s2 = document.querySelector('.side'); if (s2) s2.scrollTop = sy;
+  if (S.ui.view === 'play') wake();
+  updateNow(); updateAlarm();
+}
+
+/* ---------- actions ---------- */
+const findE = (g, side, id) => g.roster[side].find(e => e.id === id);
+const planItem = (g, ph, id) => g.plan[ph].find(i => i.id === id);
+const acts = {
+  view(el) { S.ui.view = el.dataset.v; save(); render(); },
+  /* teams */
+  tsel(el) { S.ui.team = el.dataset.id; impMsg = ''; save(); render(); },
+  tdel(el) { if (!arm(el)) return; S.teams = S.teams.filter(t => t.id !== S.ui.team); S.ui.team = null; save(); render(); },
+  tpadd() { team().players.push({id: uid(), name: '', n: '', f: [], ph: ''}); save(); render(); },
+  tpdel(el) { const t = team(); t.players = t.players.filter(p => p.id !== el.dataset.id); save(); render(); },
+  tpflag(el) { const p = team().players.find(x => x.id === el.dataset.id); p.f = toggleF(p.f, el.dataset.f); save(); render(); },
+  timp(el) {
+    const r = parseRoster($('#imp').value);
+    if (!r.players.length) { impMsg = '<div class="warnbox">No players recognised.</div>'; render(); return; }
+    const mk = p => ({id: uid(), name: p.name, n: p.n, f: p.f.slice(), ph: ''});
+    let t = team(); const m = el.dataset.m;
+    if (m === 'new' || !t) { t = {id: uid(), name: r.team || 'New team', staff: r.staff.join(', '), players: r.players.map(mk)}; S.teams.push(t); S.ui.team = t.id; }
+    else if (m === 'replace') { t.players = r.players.map(mk); if (r.staff.length) t.staff = r.staff.join(', '); }
+    else { const have = new Set(t.players.map(p => p.n + '|' + p.name.toLowerCase())); r.players.forEach(p => { if (!have.has(p.n + '|' + p.name.toLowerCase())) t.players.push(mk(p)); }); }
+    impMsg = '<div class="okbox">' + r.players.length + ' players imported' + (r.staff.length ? ', coaches: ' + esc(r.staff.join(', ')) : '') + '.</div>' + r.warn.map(w => '<div class="warnbox">' + esc(w) + '</div>').join('');
+    save(); render();
+  },
+  /* settings */
+  'tag-add'() { S.tags.push({code: '', label: '', c: S.tags.length % COLORS.length, top: false}); save(); render(); },
+  'tag-del'(el) {
+    if (!arm(el)) return; const c = S.tags[+el.dataset.i].code; S.tags.splice(+el.dataset.i, 1);
+    S.teams.forEach(t => t.players.forEach(p => { p.f = p.f.filter(x => x !== c); }));
+    S.games.forEach(g => ['home', 'away'].forEach(s => g.roster[s].forEach(e => { e.f = e.f.filter(x => x !== c); }))); save(); render();
+  },
+  'tag-col'(el) { const t = S.tags[+el.dataset.i]; t.c = (t.c + 1) % COLORS.length; save(); render(); },
+  'tag-top'(el) { const t = S.tags[+el.dataset.i]; t.top = !t.top; save(); render(); },
+  'sp-add'() { S.sports.push(sp0('sp-' + uid(), 'New sport', 2, 'Half', 'Goal', [], false, 3)); save(); render(); },
+  'sp-del'(el) { if (!arm(el)) return; if (S.sports.length < 2) { toast('Keep at least one sport'); return; } S.sports = S.sports.filter(s => s.id !== el.dataset.id); save(); render(); },
+  'sp-fouls'(el) { const s = S.sports.find(x => x.id === el.dataset.id); s.fouls = !s.fouls; save(); render(); },
+  /* games */
+  newgame() {
+    const d = S.ui.draft, th = S.teams.find(t => t.id === d.home), ta = S.teams.find(t => t.id === d.away), sp = S.sports.find(s => s.id === d.sport) || S.sports[0];
+    if (!th || !ta || th === ta) { toast('Please choose two different teams'); return; }
+    const mk = t => t.players.map(p => ({id: uid(), tp: p.id, name: p.name, n: p.n, f: p.f.slice(), ph: p.ph || '', on: true}));
+    const g = {id: uid(), sport: sp.id, sp: clone(sp), date: d.date, home: {tid: th.id, name: th.name, staff: th.staff || ''}, away: {tid: ta.id, name: ta.name, staff: ta.staff || ''},
+      roster: {home: mk(th), away: mk(ta)}, ref: '', plan: mkPlan(sp.id, S), ann: {}, chk: {}, ev: [], tm: [], per: 1, clk: false};
+    S.games.unshift(g); S.cur = g.id; S.ui.view = 'plan'; save(); render();
+  },
+  gsel(el) { S.cur = el.dataset.id; S.ui.view = 'plan'; save(); render(); },
+  gdel(el) { if (!arm(el)) return; S.games = S.games.filter(g => g.id !== el.dataset.id); if (S.cur === el.dataset.id) S.cur = null; save(); render(); },
+  /* plan */
+  'p-add'(el) { cur().plan[el.dataset.ph].push({id: uid(), t: '', d: ''}); save(); render(); },
+  'p-del'(el) { const g = cur(); g.plan[el.dataset.ph] = g.plan[el.dataset.ph].filter(i => i.id !== el.dataset.id); save(); render(); },
+  'p-up'(el) { const a = cur().plan[el.dataset.ph], i = a.findIndex(x => x.id === el.dataset.id); if (i > 0) { [a[i - 1], a[i]] = [a[i], a[i - 1]]; save(); render(); } },
+  'p-down'(el) { const a = cur().plan[el.dataset.ph], i = a.findIndex(x => x.id === el.dataset.id); if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; save(); render(); } },
+  'p-tpl'() { const g = cur(); S.templates[g.sport] = clone(g.plan); save(); toast('Saved as template for ' + spOf(g).name); },
+  'p-qadd'() { const g = cur(), v = $('#qa').value.trim(); if (!v) return; g.plan[S.ui.phase].push({id: uid(), t: v, d: ''}); save(); render(); },
+  phase(el) { S.ui.phase = el.dataset.p; save(); render(); },
+  rchk(el) { const g = cur(), k = rKey(g, S.ui.phase, el.dataset.id); g.chk[k] = !g.chk[k]; save(); render(); },
+  rreset() { const g = cur(), ph = S.ui.phase; g.plan[ph].forEach(i => { delete g.chk[rKey(g, ph, i.id)]; }); save(); render(); },
+  rbtoggle() { S.ui.rb = !S.ui.rb; save(); render(); },
+  /* check-in */
+  'ci-on'(el) { const e = findE(cur(), el.dataset.side, el.dataset.id); e.on = !e.on; save(); render(); },
+  'ci-flag'(el) { const e = findE(cur(), el.dataset.side, el.dataset.id); e.f = toggleF(e.f, el.dataset.f); save(); render(); },
+  'ci-del'(el) { const g = cur(); g.roster[el.dataset.side] = g.roster[el.dataset.side].filter(e => e.id !== el.dataset.id); save(); render(); },
+  'ci-add'(el) { cur().roster[el.dataset.side].push({id: uid(), tp: null, name: '', n: '', f: [], ph: '', on: true}); save(); render(); },
+  'ci-sort'(el) { const g = cur(); g.roster[el.dataset.side] = ordered(g.roster[el.dataset.side]); save(); render(); },
+  'ci-save'(el) {
+    const g = cur(), side = el.dataset.side, t = S.teams.find(x => x.id === g[side].tid); if (!t) return;
+    g.roster[side].forEach(e => { const p = t.players.find(x => x.id === e.tp); if (p) { p.n = e.n; p.ph = e.ph; p.f = e.f.slice(); } });
+    save(); toast('Numbers saved to team');
+  },
+  /* lineups */
+  iside(el) { S.ui.side = el.dataset.side; save(); render(); },
+  gk() { S.ui.gk = !S.ui.gk; save(); render(); },
+  ann(el) { const g = cur(); g.ann[el.dataset.id] = !g.ann[el.dataset.id]; save(); render(); },
+  annreset() { cur().ann = {}; save(); render(); },
+  'ann-next'() {
+    const g = cur(), side = S.ui.side;
+    const ids = introIds(g, side);
+    const id = ids.find(x => !g.ann[x]);
+    if (!id) { toast('Everyone announced'); return; }
+    g.ann[id] = true; save(); render();
+    const nx = document.querySelector('.intro:not(.done)');
+    if (nx) window.scrollTo({top: Math.max(0, nx.getBoundingClientRect().top + window.scrollY - 150), behavior: 'smooth'});
+    else toast('Everyone announced');
+  },
+  coachfirst() { S.ui.coachFirst = !S.ui.coachFirst; save(); render(); },
+  hold() { S.ui.hold = !S.ui.hold; save(); render(); },
+  evtoggle() { S.ui.evp = !S.ui.evp; save(); render(); },
+  /* game */
+  mode(el) { S.ui.mode = el.dataset.m; save(); render(); },
+  pdur(el) { S.ui.pen = parseInt(el.dataset.d, 10); save(); render(); },
+  per(el) { const g = cur(), sp = spOf(g); g.per = Math.max(1, Math.min(sp.periods + 3, g.per + parseInt(el.dataset.d, 10))); save(); render(); },
+  clk() { const g = cur(); g.clk = !g.clk; if (g.clk) g.tm.forEach(t => { if (t.st === 'wait') t.st = 'run'; }); lastTick = performance.now(); save(); render(); },
+  'tm-start'(el) {
+    const g = cur(), t = g.tm.find(x => x.id === el.dataset.id); if (!t) return;
+    if (!g.clk) { g.clk = true; g.tm.forEach(x => { if (x.st === 'wait') x.st = 'run'; }); } else t.st = 'run';
+    lastTick = performance.now(); save(); render();
+  },
+  tap(el) {
+    const g = cur(), sp = spOf(g), side = el.dataset.side, id = el.dataset.id, mode = S.ui.mode;
+    const ent = id === '?' ? {n: '?', name: 'Unknown'} : findE(g, side, id);
+    const nm = (ent.n ? '#' + ent.n + ' ' : '') + ent.name, sd = side === 'home' ? 'Home' : 'Away';
+    if (mode === 'goal') { g.ev.push({id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'goal'}); toast(sp.score + ' ' + sd + ': ' + nm + ' (' + score(g, 'home') + ':' + score(g, 'away') + ')', true); }
+    else if (mode === 'foul') { if (id === '?') return; g.ev.push({id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'foul'}); toast('Foul ' + sd + ': ' + nm + ' (' + cnt(g, id, 'foul') + ')', true); }
+    else if (mode === 'pen') {
+      const dur = S.ui.pen || sp.pen[0], tid = uid();
+      g.tm.push({id: tid, side, label: id === '?' ? '?' : (ent.n ? '#' + ent.n + ' ' : '') + lastName(ent.name), dur: dur * 1000, rem: dur * 1000, st: 'wait'});
+      g.ev.push({id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'pen', d: dur, tm: tid});
+      toast('Penalty ' + fmtDur(dur) + ' ' + sd + ': ' + nm + ' (starts when play resumes)', true);
+    }
+    if (mode !== 'goal' && !S.ui.hold) S.ui.mode = 'goal';
+    save(); render();
+  },
+  undo() { const g = cur(); const e = g.ev.pop(); if (e && e.tm) g.tm = g.tm.filter(t => t.id !== e.tm); $('#toast').className = ''; save(); render(); },
+  evdel(el) { const g = cur(); const e = g.ev.find(x => x.id === el.dataset.id); if (e && e.tm) g.tm = g.tm.filter(t => t.id !== e.tm); g.ev = g.ev.filter(x => x.id !== el.dataset.id); save(); render(); },
+  tmx(el) { const g = cur(); g.tm = g.tm.filter(t => t.id !== el.dataset.id); if (!g.tm.some(t => t.st === 'run')) g.clk = false; save(); render(); },
+  /* data */
+  exp() { const b = new Blob([JSON.stringify(S, null, 1)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'sportpa-backup-' + today() + '.json'; document.body.appendChild(a); a.click(); a.remove(); },
+  async expcopy() { try { await navigator.clipboard.writeText(JSON.stringify(S)); toast('Copied'); } catch (e) { toast('Copy not possible'); } },
+  impdata(el) { if (!arm(el)) return; importJson($('#impdata').value); },
+  sample() {
+    const nm = ['Anna', 'Ben', 'Clara', 'David', 'Eva', 'Felix', 'Greta', 'Hanna', 'Ida', 'Jonas'];
+    const mk = (name, ls) => ({id: uid(), name, staff: 'Coach Example', players: nm.map((n, i) => ({id: uid(), name: n + ' ' + ls[i % ls.length], n: String(i === 9 ? 7 : i + 1 + (i > 5 ? 3 : 0)), f: i === 0 ? ['T'] : i === 3 ? ['K'] : [], ph: ''})).concat([{id: uid(), name: 'Kim ' + ls[0], n: '', f: [], ph: ''}])});
+    S.teams.push(mk('Sample Red', ['Redman', 'Rose', 'Roth']), mk('Sample Blue', ['Blum', 'Bell', 'Blank'])); save(); render(); toast('Sample teams added');
+  },
+  wipe(el) { if (!arm(el)) return; S = blank(); save(); render(); }
+};
+function importJson(txt) {
+  try {
+    const o = JSON.parse(txt); if (!o || !Array.isArray(o.teams) || !Array.isArray(o.games)) throw new Error('format');
+    const b = blank(); S = migrate(Object.assign(b, o, {ui: Object.assign(b.ui, o.ui || {})}));
+    save(); dataMsg = '<div class="okbox">Import successful.</div>'; render();
+  } catch (e) { dataMsg = '<div class="warnbox">Import failed: not a valid backup.</div>'; render(); }
+}
+
+/* ---------- inputs ---------- */
+const inps = {
+  draft(el) { S.ui.draft[el.dataset.k] = el.value; },
+  tf(el) { team()[el.dataset.k] = el.value; },
+  tp(el) { team().players.find(p => p.id === el.dataset.id)[el.dataset.k] = el.value; },
+  'ci-f'(el) { findE(cur(), el.dataset.side, el.dataset.id)[el.dataset.k] = el.value; },
+  g(el) { cur()[el.dataset.k] = el.value; },
+  gs(el) { cur()[el.dataset.side].staff = el.value; },
+  pi(el) { planItem(cur(), el.dataset.ph, el.dataset.id)[el.dataset.k] = el.value; },
+  tag(el) { S.tags[+el.dataset.i][el.dataset.k] = el.value.trim(); },
+  sp(el) {
+    const s = S.sports.find(x => x.id === el.dataset.id), k = el.dataset.k, v = el.value;
+    if (k === 'periods' || k === 'foulLimit') s[k] = Math.max(1, parseInt(v, 10) || 1);
+    else if (k === 'pen') s.pen = v.split(/[,\s]+/).map(x => parseInt(x, 10)).filter(x => x > 0);
+    else s[k] = v;
+  }
+};
+document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (el && acts[el.dataset.act]) acts[el.dataset.act](el, e); });
+document.addEventListener('input', e => { const el = e.target, h = el.dataset && el.dataset.inp; if (h && inps[h]) { inps[h](el); save(); } });
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.id === 'impfile' && el.files[0]) { el.files[0].text().then(importJson); return; }
+  if (el.dataset && el.dataset.inp === 'draft') { inps.draft(el); save(); return; }
+  if (el.dataset && el.dataset.rr) render();
+});
+
+/* ---------- timer loop ---------- */
+let lastTick = performance.now();
+function updateNow() { const el = $('#now'); if (el) { const t = hms(Date.now()); if (el.textContent !== t) el.textContent = t; } }
+function updateAlarm() {
+  const g = cur(); let st = '';
+  if (g) { if (g.tm.some(t => t.st === 'done')) st = 'done'; else if (g.clk && g.tm.some(t => t.st === 'run' && tmClass(t) === 'warn')) st = 'warn'; }
+  const c = st ? 'alarm-' + st : ''; if (document.body.className !== c) document.body.className = c;
+}
+setInterval(() => {
+  const now = performance.now(), dt = Math.min(now - lastTick, 2000); lastTick = now;
+  updateNow();
+  const g = cur();
+  if (g && g.clk) {
+    let changed = false; const had = g.tm.some(t => t.st === 'run');
+    g.tm.forEach(t => {
+      if (t.st !== 'run') return;
+      t.rem -= dt; const fin = t.rem <= 0; if (fin) { t.rem = 0; t.st = 'done'; changed = true; }
+      const el = document.querySelector('[data-tid="' + t.id + '"]');
+      if (el) { el.className = 'tm ' + tmClass(t); el.querySelector('.tt').textContent = fmtT(t.rem); if (fin) { el.firstElementChild.innerHTML = tmLabel(t); el.querySelector('.tmb').innerHTML = tmBtns(t); } }
+    });
+    if (had && !g.tm.some(t => t.st === 'run')) {
+      g.clk = false; changed = true;
+      const b = document.querySelector('.clk'); if (b) { b.className = 'clk stop'; b.textContent = 'Play stopped (tap when play resumes)'; }
+    }
+    if (changed) save();
+  }
+  updateAlarm();
+}, 250);
+
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* ignore */ } }
+render();
+</script>
+</body>
+</html>
