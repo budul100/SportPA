@@ -111,4 +111,4 @@ then open `http://localhost:8000`.
 
 ## License
 
-Add a license of your choice before publishing, for example MIT.
+MIT, see [LICENSE](LICENSE).
