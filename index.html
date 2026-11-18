@@ -111,6 +111,10 @@ body.alarm-warn #flash{display:block;animation:fwarn .8s infinite alternate}
 .scl{font-size:14px;opacity:.9;margin-top:2px}
 .tm.wait{border-color:var(--acc)}
 .ev.evlast{font-size:18px;font-weight:700;padding:10px 8px;background:var(--panel2);border-radius:8px;margin-bottom:4px}
+.ico{display:block;margin:auto}
+.row input{min-width:0}
+.brandimg{height:36px;width:36px;border-radius:8px;align-self:center;margin:0 6px 0 2px}
+nav button .ico{width:22px;height:22px}
 </style>
 </head>
 <body>
@@ -151,6 +155,16 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 const clone = o => JSON.parse(JSON.stringify(o));
+const ICONS = {
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  disk: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  reset: '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
+  edit: '<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>',
+  play: '<polygon points="5 3 19 12 5 21 5 3"/>'
+};
+const ico = n => '<svg class="ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[n] + '</svg>';
 
 /* ---------- state ---------- */
 function blank() {
@@ -232,8 +246,8 @@ const hms = ts => { const d = new Date(ts); return [d.getHours(), d.getMinutes()
 const refs = g => String(g.ref || '').split(/[,\/\n]+/).map(s => s.trim()).filter(Boolean);
 function arm(el, txt) {
   if (el.dataset.armed === '1') return true;
-  el.dataset.armed = '1'; el._o = el.textContent; el.textContent = txt || 'Sure?';
-  setTimeout(() => { if (el.isConnected) { el.dataset.armed = ''; el.textContent = el._o; } }, 3000);
+  el.dataset.armed = '1'; el._o = el.innerHTML; el.textContent = txt || 'Sure?';
+  setTimeout(() => { if (el.isConnected) { el.dataset.armed = ''; el.innerHTML = el._o; } }, 3000);
   return false;
 }
 let toastT;
@@ -297,10 +311,10 @@ function parseRoster(text) {
 /* ---------- views ---------- */
 function nav() {
   const v = S.ui.view, g = cur();
-  const b = (k, t) => '<button data-act="view" data-v="' + k + '" class="' + (v === k ? 'on' : '') + '">' + t + '</button>';
-  return '<nav><b class="brand">SportPA</b>' + b('games', 'Games') + b('teams', 'Teams') + b('settings', 'Settings') + '<span class="sep"></span>' +
+  const b = (k, t, ti) => '<button data-act="view" data-v="' + k + '"' + (ti ? ' title="' + ti + '" aria-label="' + ti + '"' : '') + ' class="' + (v === k ? 'on' : '') + '">' + t + '</button>';
+  return '<nav><img class="brandimg" src="icon-192.png" alt="SportPA" title="SportPA">' + b('games', 'Games') + b('teams', 'Teams') + b('settings', ico('gear'), 'Settings') + '<span class="sep"></span>' +
     (g ? b('plan', 'Schedule') + b('checkin', 'Check-in') + b('intro', 'Lineups') + b('play', 'Game') : '') +
-    '<span class="sep"></span>' + b('data', 'Data') +
+    '<span class="sep"></span>' + b('data', ico('disk'), 'Data') +
     '<span class="navr">' + (g ? '<span class="mute small">' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</span>' : '') + '<b id="now" class="now"></b></span></nav>';
 }
 
@@ -308,7 +322,7 @@ function viewGames() {
   const d = S.ui.draft;
   const opt = sel => '<option value="">Choose team</option>' + S.teams.map(t => '<option value="' + t.id + '"' + (t.id === sel ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('');
   const list = S.games.map(g => '<div class="card row"><div class="grow"><b>' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</b><div class="mute small">' + esc(g.date) + ' · ' + esc(spOf(g).name) + ' · ' + score(g, 'home') + ':' + score(g, 'away') + '</div></div>' +
-    '<button class="pri" data-act="gsel" data-id="' + g.id + '">Open</button><button class="danger" data-act="gdel" data-id="' + g.id + '">Delete</button></div>').join('') || '<div class="mute">No games yet.</div>';
+    '<button class="pri" data-act="gsel" data-id="' + g.id + '" title="Open game" aria-label="Open game">' + ico('play') + '</button><button class="danger" data-act="gdel" data-id="' + g.id + '" title="Delete game" aria-label="Delete game">' + ico('x') + '</button></div>').join('') || '<div class="mute">No games yet.</div>';
   return '<h2>Games</h2><div class="grid2"><div><div class="card"><h3>New game</h3>' +
     '<label>Sport</label><select data-inp="draft" data-k="sport">' + S.sports.map(s => '<option value="' + esc(s.id) + '"' + (d.sport === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select>' +
     '<label>Home</label><select data-inp="draft" data-k="home">' + opt(d.home) + '</select>' +
@@ -333,7 +347,7 @@ function viewTeams() {
     ed = '<div class="card"><label>Team name</label><input value="' + esc(t.name) + '" data-inp="tf" data-k="name">' +
       '<label>Coaches / staff</label><input value="' + esc(t.staff || '') + '" data-inp="tf" data-k="staff">' +
       '<h3 style="margin-top:12px">Roster (' + t.players.length + ')</h3>' + rows +
-      '<div class="row" style="margin-top:8px"><button data-act="tpadd">+ Player</button><button class="danger" data-act="tdel">Delete team</button></div></div>';
+      '<div class="row" style="margin-top:8px"><button data-act="tpadd">+ Player</button><button class="danger" data-act="tdel" title="Delete team" aria-label="Delete team">' + ico('x') + '</button></div></div>';
   }
   const imp = '<div class="card"><h3>Import roster</h3><div class="mute small">Copy a table from Word or a web page and paste it here. Number, tags, name and coaches are recognised.</div>' +
     '<textarea id="imp" placeholder="Number, tags, name ..." style="min-height:120px;margin-top:8px"></textarea>' +
@@ -343,18 +357,19 @@ function viewTeams() {
 }
 
 function viewSettings() {
-  const tags = S.tags.map((t, i) => '<div class="row" style="margin-bottom:6px"><input style="width:80px" value="' + esc(t.code) + '" data-inp="tag" data-i="' + i + '" data-k="code" placeholder="Code">' +
+  const tags = S.tags.map((t, i) => '<div class="row" style="margin-bottom:6px;flex-wrap:nowrap"><input style="width:80px" value="' + esc(t.code) + '" data-inp="tag" data-i="' + i + '" data-k="code" placeholder="Code">' +
     '<input class="grow" style="width:auto" value="' + esc(t.label) + '" data-inp="tag" data-i="' + i + '" data-k="label" placeholder="Label">' +
     '<button data-act="tag-col" data-i="' + i + '" style="background:' + COLORS[t.c % COLORS.length] + ';min-width:44px"></button>' +
     '<button class="' + (t.top ? 'on' : '') + '" data-act="tag-top" data-i="' + i + '">Priority</button>' +
-    '<button class="danger" data-act="tag-del" data-i="' + i + '">×</button></div>').join('');
-  const sports = S.sports.map(s => '<div class="card" style="background:var(--panel2)"><div class="row"><input class="grow" style="width:auto" value="' + esc(s.name) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="name"><button class="danger" data-act="sp-del" data-id="' + esc(s.id) + '">Delete</button></div>' +
+    '<button class="danger" data-act="tag-del" data-i="' + i + '" title="Delete tag" aria-label="Delete tag">' + ico('x') + '</button></div>').join('');
+  const sports = S.sports.map(s => '<div class="card" style="background:var(--panel2)"><div class="row"><input class="grow" style="width:auto" value="' + esc(s.name) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="name"><button class="danger" data-act="sp-del" data-id="' + esc(s.id) + '" title="Delete sport" aria-label="Delete sport">' + ico('x') + '</button></div>' +
     '<div class="grid2" style="margin-top:4px"><div><label>Number of periods</label><input type="number" min="1" value="' + s.periods + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="periods">' +
     '<label>Period name (Half, Quarter, Set, Inning ...)</label><input value="' + esc(s.label) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="label">' +
     '<label>Scoring name (Goal, Point, Run ...)</label><input value="' + esc(s.score) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="score"></div>' +
     '<div><label>Penalty durations in seconds, comma separated (empty = no penalty timers)</label><input value="' + esc(s.pen.join(', ')) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="pen">' +
     '<label>Fouls per player</label><div class="row"><button class="' + (s.fouls ? 'on' : '') + '" data-act="sp-fouls" data-id="' + esc(s.id) + '">' + (s.fouls ? 'Tracked' : 'Off') + '</button>' +
-    '<input type="number" min="1" style="width:90px" value="' + s.foulLimit + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="foulLimit"><span class="mute small">fouls until out</span></div></div></div></div>').join('');
+    '<input type="number" min="1" style="width:90px" value="' + s.foulLimit + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="foulLimit"><span class="mute small">fouls until out</span></div>' +
+    '<label>Stay in foul / penalty mode after each entry (otherwise it switches back to ' + esc(s.score.toLowerCase()) + ')</label><button class="' + (s.keep ? 'on' : '') + '" data-act="sp-keep" data-id="' + esc(s.id) + '">' + (s.keep ? 'Keep mode: on' : 'Keep mode: off') + '</button></div></div></div>').join('');
   return '<h2>Settings</h2><div class="grid2"><div><div class="card"><h3>Player tags</h3><div class="mute small" style="margin-bottom:8px">Short codes shown next to a player, e.g. goalkeeper or captain. The code is also what the roster import recognises. Priority tags are listed first in lineups.</div>' + tags +
     '<button data-act="tag-add" style="margin-top:6px">+ Tag</button></div></div>' +
     '<div><div class="card"><h3>Sports</h3><div class="mute small" style="margin-bottom:8px">Changes apply to new games. Existing games keep the settings they were created with.</div>' + sports + '<button data-act="sp-add">+ Sport</button></div></div></div>';
@@ -403,7 +418,7 @@ function viewIntro() {
     '<button class="' + (side === 'away' ? 'on' : '') + '" data-act="iside" data-side="away">Away: ' + esc(g.away.name) + '</button>' +
     '<button class="' + (side === 'home' ? 'on' : '') + '" data-act="iside" data-side="home">Home: ' + esc(g.home.name) + '</button><span class="grow"></span>' +
     (side !== 'ref' ? '<button class="' + (S.ui.coachFirst ? 'on' : '') + '" data-act="coachfirst">Coaches first</button>' : '') +
-    '<button class="' + (S.ui.gk ? 'on' : '') + '" data-act="gk">Priority tags first</button><button data-act="annreset">Reset checks</button></div>';
+    '<button class="' + (S.ui.gk ? 'on' : '') + '" data-act="gk">Priority tags first</button><button data-act="annreset" title="Reset checks" aria-label="Reset checks">' + ico('reset') + '</button></div>';
   if (side === 'ref') {
     const R = refs(g);
     return tabs + (R.map((n, i) => '<button class="intro ' + (g.ann['ref:' + i] ? 'done' : '') + '" data-act="ann" data-id="ref:' + i + '"><span class="nm">' + esc(n) + '</span></button>').join('') ||
@@ -454,8 +469,8 @@ function rbPanel(g) {
   return '<div class="card"><div class="tabs">' + PH.map(p => '<button class="' + (ph === p[0] ? 'on' : '') + '" data-act="phase" data-p="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
     '<div class="mute small" style="margin-bottom:8px">' + done + ' of ' + items.length + ' announced' + (ph === 'brk' ? ' · after ' + esc(sp.label.toLowerCase()) + ' ' + g.per : '') + '</div>' +
     items.map(i => { const d = g.chk[rKey(g, ph, i.id)]; return '<div class="ritem ' + (d ? 'done' : '') + '" data-act="rchk" data-id="' + i.id + '"><span class="badge">' + (d ? '✓' : '') + '</span><div><div class="rt">' + esc(i.t || '(untitled)') + '</div>' + (i.d ? '<div class="rd">' + esc(i.d) + '</div>' : '') + '</div></div>'; }).join('') +
-    '<div class="row" style="margin-top:8px"><input id="qa" class="grow" style="width:auto" placeholder="Add item ..."><button data-act="p-qadd">Add</button></div>' +
-    '<div class="row" style="margin-top:8px"><button data-act="rreset">Reset checks</button><button data-act="view" data-v="plan">Edit schedule</button></div></div>';
+    '<div class="row" style="margin-top:8px"><input id="qa" class="grow" style="width:auto" placeholder="Add item ..."><button data-act="p-qadd" title="Add item" aria-label="Add item">' + ico('plus') + '</button></div>' +
+    '<div class="row" style="margin-top:8px"><button data-act="rreset" title="Reset checks" aria-label="Reset checks">' + ico('reset') + '</button><button data-act="view" data-v="plan" title="Edit schedule" aria-label="Edit schedule">' + ico('edit') + '</button></div></div>';
 }
 function viewPlay() {
   const g = cur(), sp = spOf(g);
@@ -472,12 +487,12 @@ function viewPlay() {
     const key = id => { if (id === '?') return 1e10; const e = g.roster[side].find(x => x.id === id); return e ? numOf(e) : 1e9; };
     return Object.keys(m).sort((x, y) => (m[y] - m[x]) || (key(x) - key(y))).map(id => shortWho(g, side, id) + (m[id] > 1 ? ' (' + m[id] + ')' : '')).join(', ') || '–';
   };
-  return '<div class="card top"><div class="row"><button data-act="per" data-d="-1">−</button><b style="font-size:20px">' + esc(sp.label) + ' ' + g.per + '/' + sp.periods + '</b><button data-act="per" data-d="1">+</button></div>' +
+  return '<div class="card top"><div class="row"><button data-act="per" data-d="-1">−</button><b style="font-size:20px">' + esc(sp.label) + ' ' + g.per + '/' + sp.periods + '</b><button data-act="per" data-d="1">+</button>' +
+    '<span style="width:1px;height:32px;background:var(--line);margin:0 4px"></span>' +
+    mb('goal', esc(sp.score)) + (sp.fouls ? mb('foul', 'Foul') : '') + (sp.pen.length ? mb('pen', 'Penalty') : '') + '</div>' +
     '<div class="sc"><div class="sh" style="text-align:right"><div class="tn" style="color:var(--home)">' + esc(g.home.name) + '</div><div class="scl">' + esc(scorers('home')) + '</div></div><div class="sn">' + score(g, 'home') + ' : ' + score(g, 'away') + '</div><div class="sh"><div class="tn" style="color:var(--away)">' + esc(g.away.name) + '</div><div class="scl">' + esc(scorers('away')) + '</div></div></div>' +
-    '<div class="row">' + mb('goal', esc(sp.score)) + (sp.fouls ? mb('foul', 'Foul') : '') + (sp.pen.length ? mb('pen', 'Penalty') : '') +
-    (S.ui.mode === 'pen' ? sp.pen.map(d => '<button class="' + (S.ui.pen === d ? 'on' : '') + '" data-act="pdur" data-d="' + d + '">' + fmtDur(d) + '</button>').join('') : '') +
-    (S.ui.mode !== 'goal' ? '<button class="' + (S.ui.hold ? 'on' : '') + '" data-act="hold">Keep mode</button>' : '') +
-    '<button class="' + (S.ui.rb ? 'on' : '') + '" data-act="rbtoggle">Schedule</button><button class="' + (S.ui.evp ? 'on' : '') + '" data-act="evtoggle">Events</button></div></div>' +
+    '<div class="row"><button class="' + (S.ui.rb ? 'on' : '') + '" data-act="rbtoggle">Schedule</button><button class="' + (S.ui.evp ? 'on' : '') + '" data-act="evtoggle">Events</button></div>' +
+    (S.ui.mode === 'pen' ? '<div class="row" style="flex-basis:100%;border-top:1px solid var(--line);padding-top:8px"><span class="mute small">Penalty duration</span>' + sp.pen.map(d => '<button class="' + (S.ui.pen === d ? 'on' : '') + '" data-act="pdur" data-d="' + d + '">' + fmtDur(d) + '</button>').join('') + '</div>' : '') + '</div>' +
     '<div class="play ' + (S.ui.rb ? '' : 'norb') + '">' + col('home') + col('away') + '<aside class="side">' +
     '<div class="card"><button class="clk ' + (g.clk ? 'run' : 'stop') + '" data-act="clk">' + (g.clk ? 'Play running (tap when play stops)' : 'Play stopped (tap when play resumes)') + '</button><div id="timers" style="margin-top:8px">' + timersHtml(g) + '</div></div>' +
     (S.ui.rb ? rbPanel(g) : '') +
@@ -516,7 +531,7 @@ function render() {
 const findE = (g, side, id) => g.roster[side].find(e => e.id === id);
 const planItem = (g, ph, id) => g.plan[ph].find(i => i.id === id);
 const acts = {
-  view(el) { S.ui.view = el.dataset.v; save(); render(); },
+  view(el) { if (el.dataset.v === 'play' && S.ui.view !== 'play' && S.ui.phase === 'pre') S.ui.phase = 'brk'; S.ui.view = el.dataset.v; save(); render(); },
   /* teams */
   tsel(el) { S.ui.team = el.dataset.id; impMsg = ''; save(); render(); },
   tdel(el) { if (!arm(el)) return; S.teams = S.teams.filter(t => t.id !== S.ui.team); S.ui.team = null; save(); render(); },
@@ -545,6 +560,7 @@ const acts = {
   'tag-top'(el) { const t = S.tags[+el.dataset.i]; t.top = !t.top; save(); render(); },
   'sp-add'() { S.sports.push(sp0('sp-' + uid(), 'New sport', 2, 'Half', 'Goal', [], false, 3)); save(); render(); },
   'sp-del'(el) { if (!arm(el)) return; if (S.sports.length < 2) { toast('Keep at least one sport'); return; } S.sports = S.sports.filter(s => s.id !== el.dataset.id); save(); render(); },
+  'sp-keep'(el) { const x = S.sports.find(q => q.id === el.dataset.id); x.keep = !x.keep; save(); render(); },
   'sp-fouls'(el) { const s = S.sports.find(x => x.id === el.dataset.id); s.fouls = !s.fouls; save(); render(); },
   /* games */
   newgame() {
@@ -588,16 +604,16 @@ const acts = {
     const g = cur(), order = ['ref', 'away', 'home'], names = {ref: 'Officials', away: 'Away team', home: 'Home team'};
     const open = sd => introIds(g, sd).find(x => !g.ann[x]);
     const nextTab = from => { const k = order.indexOf(from); for (let n = 1; n < order.length; n++) { const sd = order[(k + n) % order.length]; if (open(sd)) return sd; } return null; };
+    const goGame = () => { S.ui.view = 'play'; if (S.ui.phase === 'pre') S.ui.phase = 'brk'; save(); render(); window.scrollTo(0, 0); toast('Lineups done: game on'); };
     const jump = sd => { S.ui.side = sd; save(); render(); window.scrollTo({top: 0, behavior: 'smooth'}); toast('Next: ' + names[sd]); };
     const side = S.ui.side, id = open(side);
-    if (!id) { const sd = nextTab(side); if (sd) jump(sd); else toast('Everyone announced'); return; }
+    if (!id) { const sd = nextTab(side); if (sd) jump(sd); else goGame(); return; }
     g.ann[id] = true; save(); render();
-    if (!open(side)) { const sd = nextTab(side); if (sd) jump(sd); else toast('Everyone announced'); return; }
+    if (!open(side)) { const sd = nextTab(side); if (sd) jump(sd); else goGame(); return; }
     const nx = document.querySelector('.intro:not(.done)');
     if (nx) window.scrollTo({top: Math.max(0, nx.getBoundingClientRect().top + window.scrollY - 150), behavior: 'smooth'});
   },
   coachfirst() { S.ui.coachFirst = !S.ui.coachFirst; save(); render(); },
-  hold() { S.ui.hold = !S.ui.hold; save(); render(); },
   evtoggle() { S.ui.evp = !S.ui.evp; save(); render(); },
   /* game */
   mode(el) { S.ui.mode = el.dataset.m; save(); render(); },
@@ -621,7 +637,7 @@ const acts = {
       g.ev.push({id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'pen', d: dur, tm: tid});
       toast('Penalty ' + fmtDur(dur) + ' ' + sd + ': ' + nm + ' (starts when play resumes)', true);
     }
-    if (mode !== 'goal' && !S.ui.hold) S.ui.mode = 'goal';
+    if (mode !== 'goal' && !sp.keep) S.ui.mode = 'goal';
     save(); render();
   },
   undo() { const g = cur(); const e = g.ev.pop(); if (e && e.tm) g.tm = g.tm.filter(t => t.id !== e.tm); $('#toast').className = ''; save(); render(); },

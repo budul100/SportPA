@@ -11,7 +11,7 @@ It runs entirely in the browser (plain HTML, CSS and JavaScript, no build step, 
 - **Lineups**: large, readable introduction lists for officials, away team and home team. Tap to strike off a name, or use the *Announce next* button to strike off the next one and scroll on. Coaches can be listed before or after the players.
 - **Game**: both rosters side by side. Tap a player to log a goal (or foul or penalty, depending on the mode). Running score, scorers in the top bar (sorted by goals, then number), event log with seconds, undo.
 - **Penalty timers**: assign a penalty and a player, the countdown starts only when you tell the app that play has resumed. Visual warning before the end, full-screen flashing at expiry until you confirm, so a return to play is never forgotten. The clock stops automatically when no penalty is left.
-- **Fouls** (optional per sport): counted per player with a limit, e.g. water polo.
+- **Fouls** (optional per sport): counted per player with a limit, e.g. water polo. Per sport you can choose whether the app stays in foul or penalty mode after an entry ("Keep mode") or switches back to scoring.
 - **Generic by design**: sports, number and names of periods (halves, quarters, sets, innings, ...), scoring name, penalty durations and player tags are all configurable.
 - **Roster import**: paste a table copied from Word, a PDF or a web page.
 - **Current time** with seconds is always visible.
@@ -90,7 +90,7 @@ Everything is stored in the browser's local storage on the device. Nothing is ev
 | `index.html` | The whole app (markup, styles, code) |
 | `sw.js` | Service worker, cache-first, makes the app work offline |
 | `manifest.json` | Web app manifest for installing the app |
-| `icon-192.png`, `icon-512.png` | App icons |
+| `icon-192.png`, `icon-512.png` | App icons (the 192 px icon is also shown in the top left corner of the app) |
 
 ## Limitations
 
