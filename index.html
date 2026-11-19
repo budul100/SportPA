@@ -242,6 +242,15 @@ function dupSet(list) {
 const lastName = n => { const p = String(n).trim().split(/\s+/); return p[p.length - 1] || ''; };
 const fmtDur = s => s >= 60 ? (s / 60) + ' min' : s + ' s';
 const fmtT = ms => { const s = Math.ceil(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+/* Starts waiting penalty timers (all, or only one) and moves the linked penalty event to the actual start time */
+function startWaiting(g, onlyId) {
+  const now = Date.now();
+  g.tm.forEach(t => {
+    if (t.st !== 'wait' || (onlyId && t.id !== onlyId)) return;
+    t.st = 'run';
+    const e = g.ev.find(x => x.tm === t.id); if (e) e.ts = now;
+  });
+}
 const hms = ts => { const d = new Date(ts); return [d.getHours(), d.getMinutes(), d.getSeconds()].map(x => String(x).padStart(2, '0')).join(':'); };
 const refs = g => String(g.ref || '').split(/[,\/\n]+/).map(s => s.trim()).filter(Boolean);
 function arm(el, txt) {
@@ -481,7 +490,7 @@ function viewPlay() {
   const col = side => '<div class="col ' + side + '"><h3><span>' + (side === 'home' ? 'Home' : 'Away') + ': ' + esc(g[side].name) + '</span><span>' + score(g, side) + '</span></h3><div class="pcards">' +
     ordered(g.roster[side].filter(e => e.on)).map(e => pcard(g, side, e, sp)).join('') +
     '<button class="pc ' + side + ' unk" data-act="tap" data-side="' + side + '" data-id="?"><span class="n">?</span><span class="nm">Unknown<span class="bd">' + (unk(side) ? '<span class="pill p-g">' + esc(sp.score) + ' ' + unk(side) + '</span>' : '') + '</span></span></button></div></div>';
-  const ev = g.ev.slice(-8).reverse().map((e, i) => '<div class="ev' + (i === 0 ? ' evlast' : '') + '"><span>' + hms(e.ts) + ' ' + (e.s === 'home' ? 'H' : 'A') + ' ' + esc(who(g, e)) + ' · ' + ({goal: esc(sp.score), foul: 'Foul', pen: 'Pen ' + fmtDur(e.d || 0)}[e.t]) + ' (' + e.p + ')</span><button data-act="evdel" data-id="' + e.id + '">×</button></div>').join('') || '<div class="mute small">No events yet</div>';
+  const ev = g.ev.slice(-8).reverse().map((e, i) => '<div class="ev' + (i === 0 ? ' evlast' : '') + '"><span>' + hms(e.ts) + ' · ' + e.p + '/' + sp.periods + ' · ' + (e.s === 'home' ? 'H' : 'A') + ' ' + esc(who(g, e)) + ' · ' + ({goal: esc(sp.score), foul: 'Foul', pen: 'Pen ' + fmtDur(e.d || 0)}[e.t]) + '</span><button data-act="evdel" data-id="' + e.id + '">×</button></div>').join('') || '<div class="mute small">No events yet</div>';
   const scorers = side => {
     const m = {}; g.ev.filter(e => e.t === 'goal' && e.s === side).forEach(e => { m[e.e] = (m[e.e] || 0) + 1; });
     const key = id => { if (id === '?') return 1e10; const e = g.roster[side].find(x => x.id === id); return e ? numOf(e) : 1e9; };
@@ -531,7 +540,7 @@ function render() {
 const findE = (g, side, id) => g.roster[side].find(e => e.id === id);
 const planItem = (g, ph, id) => g.plan[ph].find(i => i.id === id);
 const acts = {
-  view(el) { if (el.dataset.v === 'play' && S.ui.view !== 'play' && S.ui.phase === 'pre') S.ui.phase = 'brk'; S.ui.view = el.dataset.v; save(); render(); },
+  view(el) { dataMsg = ''; if (el.dataset.v === 'play' && S.ui.view !== 'play' && S.ui.phase === 'pre') S.ui.phase = 'brk'; S.ui.view = el.dataset.v; save(); render(); },
   /* teams */
   tsel(el) { S.ui.team = el.dataset.id; impMsg = ''; save(); render(); },
   tdel(el) { if (!arm(el)) return; S.teams = S.teams.filter(t => t.id !== S.ui.team); S.ui.team = null; save(); render(); },
@@ -619,10 +628,10 @@ const acts = {
   mode(el) { S.ui.mode = el.dataset.m; save(); render(); },
   pdur(el) { S.ui.pen = parseInt(el.dataset.d, 10); save(); render(); },
   per(el) { const g = cur(), sp = spOf(g); g.per = Math.max(1, Math.min(sp.periods + 3, g.per + parseInt(el.dataset.d, 10))); save(); render(); },
-  clk() { const g = cur(); g.clk = !g.clk; if (g.clk) g.tm.forEach(t => { if (t.st === 'wait') t.st = 'run'; }); lastTick = performance.now(); save(); render(); },
+  clk() { const g = cur(); g.clk = !g.clk; if (g.clk) startWaiting(g); lastTick = performance.now(); save(); render(); },
   'tm-start'(el) {
     const g = cur(), t = g.tm.find(x => x.id === el.dataset.id); if (!t) return;
-    if (!g.clk) { g.clk = true; g.tm.forEach(x => { if (x.st === 'wait') x.st = 'run'; }); } else t.st = 'run';
+    if (!g.clk) { g.clk = true; startWaiting(g); } else startWaiting(g, t.id);
     lastTick = performance.now(); save(); render();
   },
   tap(el) {
@@ -658,7 +667,7 @@ function importJson(txt) {
   try {
     const o = JSON.parse(txt); if (!o || !Array.isArray(o.teams) || !Array.isArray(o.games)) throw new Error('format');
     const b = blank(); S = migrate(Object.assign(b, o, {ui: Object.assign(b.ui, o.ui || {})}));
-    save(); dataMsg = '<div class="okbox">Import successful.</div>'; render();
+    save(); dataMsg = '<div class="okbox">Import successful.</div>'; render(); setTimeout(() => { dataMsg = ''; if (S.ui.view === 'data') render(); }, 4000);
   } catch (e) { dataMsg = '<div class="warnbox">Import failed: not a valid backup.</div>'; render(); }
 }
 
