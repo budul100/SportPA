@@ -253,7 +253,7 @@ const toggleF = (arr, c) => normF(arr.includes(c) ? arr.filter(x => x !== c) : a
 function badge(c) { const col = tagCol(c); return '<span class="badge" title="' + esc(tagOf(c) ? tagOf(c).label : c) + '" style="background:' + col + '33;border-color:' + col + ';color:' + col + '">' + esc(c) + '</span>'; }
 function tagBtn(c, on, attrs) {
   const col = tagCol(c);
-  return '<button class="fb" title="' + esc(tagOf(c) ? tagOf(c).label : c) + '" style="' + (on ? 'background:' + col + ';border-color:' + col + ';color:#04121f' : '') + '" ' + attrs + '>' + esc(c) + '</button>';
+  return '<button class="fb" title="' + esc(tagOf(c) ? tagOf(c).label : c) + '" style="' + (on ? 'background:' + col + ';border-color:' + col + ';color:#04121f' : 'border-color:' + col + ';color:' + col) + '" ' + attrs + '>' + esc(c) + '</button>';
 }
 const numOf = e => (e.n === '' || e.n == null || isNaN(parseInt(e.n, 10))) ? 1e9 : parseInt(e.n, 10);
 function ordered(list) {
