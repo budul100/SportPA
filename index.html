@@ -605,7 +605,7 @@ function viewPlay() {
     '<div class="row"><button class="' + (S.ui.rb ? 'on' : '') + '" data-act="rbtoggle">Schedule</button><button class="' + (S.ui.evp ? 'on' : '') + '" data-act="evtoggle">Events</button></div>' +
     sub + '</div>' +
     '<div class="play ' + (S.ui.rb ? '' : 'norb') + '">' + col('home') + col('away') + '<aside class="side">' +
-    '<div class="card"><button class="clk ' + (g.clk ? 'run' : 'stop') + '" data-act="clk">' + (g.clk ? 'Play running (tap when play stops)' : 'Play stopped (tap when play resumes)') + '</button><div id="timers" style="margin-top:8px">' + timersHtml(g) + '</div></div>' +
+    '<div class="card"><button class="clk ' + (g.clk ? 'run' : 'stop') + '" data-act="clk">' + (g.clk ? 'Play running (tap to stop)' : 'Play stopped (tap to resume)') + '</button><div id="timers" style="margin-top:8px">' + timersHtml(g) + '</div></div>' +
     (S.ui.rb ? rbPanel(g) : '') +
     (S.ui.evp ? '<div class="card"><h3>Events</h3>' + ev + '</div>' : '') + '</aside></div>';
 }
