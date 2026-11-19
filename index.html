@@ -101,6 +101,7 @@ details summary{cursor:pointer;font-weight:600;min-height:32px}
 .tabs button{flex:1;min-height:40px;padding:4px 8px}
 nav .brand{align-self:center;margin:0 6px 0 4px;font-size:18px;letter-spacing:.3px}
 .navr{margin-left:auto;display:flex;gap:14px;align-items:center}
+.ver{font-size:11px;color:var(--mute);opacity:.6}
 .now{font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:.5px}
 .nextbtn{position:fixed;right:18px;bottom:18px;z-index:30;min-height:72px;min-width:200px;font-size:22px;font-weight:700;background:var(--acc);color:#04121f;border-color:var(--acc);box-shadow:0 6px 20px #0009}
 #flash{position:fixed;inset:0;pointer-events:none;z-index:45;display:none}
@@ -211,7 +212,9 @@ function migrate(S) {
   if (S.ui.gt == null) S.ui.gt = '';
   return S;
 }
-let storageOK = true;
+let storageOK = true, appVer = '';
+/* The version is the cache name of the service worker (VERSION in sw.js), so it shows what is really installed */
+function readVer() { if (!window.caches) return; caches.keys().then(k => { const v = (k.find(x => /^sportpa-v/.test(x)) || '').replace('sportpa-', ''); if (v !== appVer) { appVer = v; const el = $('#ver'); if (el) el.textContent = v; } }).catch(() => {}); }
 function load() {
   const b = blank();
   try {
@@ -349,7 +352,7 @@ function nav() {
   return '<nav><img class="brandimg" src="icon-192.png" alt="SportPA" title="SportPA">' + b('games', 'Games') + b('teams', 'Teams') + b('settings', ico('gear'), 'Settings') + '<span class="sep"></span>' +
     (g ? b('plan', 'Schedule') + b('checkin', 'Check-in') + b('intro', 'Intro') + b('play', 'Game') : '') +
     '<span class="sep"></span>' + b('data', ico('disk'), 'Data') +
-    '<span class="navr">' + (g ? '<span class="mute small">' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</span>' : '') + '<b id="now" class="now"></b></span></nav>';
+    '<span class="navr"><span id="ver" class="ver">' + esc(appVer) + '</span>' + (g ? '<span class="mute small">' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</span>' : '') + '<b id="now" class="now"></b></span></nav>';
 }
 
 function viewGames() {
@@ -615,6 +618,7 @@ function viewData() {
     '<div style="margin-top:8px"><button class="danger" data-act="impdata">Import (replaces everything)</button></div>' + dataMsg + '</div></div>' +
     '<div><div class="card"><h3>Sample data</h3><div class="mute small">Fictional teams from defaults.json to try things out (with a duplicate number and a player without number).</div><div style="margin-top:8px"><button data-act="sample">Add sample teams</button></div></div>' +
     '<div class="card"><h3>Default sports</h3><div class="mute small">Presets come from defaults.json. This restores all sports that ship with the app to their preset values (own sports are kept). Existing games keep their settings.</div><div style="margin-top:8px"><button class="danger" data-act="defs-reset">Reset default sports</button></div></div>' +
+    '<div class="card"><h3>App version ' + esc(appVer || '(dev)') + '</h3><div class="mute small">If an installed copy keeps showing old behaviour: this clears the app cache and reloads it. Your teams, games and settings are kept.</div><div style="margin-top:8px"><button data-act="app-refresh">Clear app cache and reload</button></div></div>' +
     '<div class="card"><h3>Delete everything</h3><button class="danger" data-act="wipe">Delete all data</button></div></div></div>';
 }
 let dataMsg = '';
@@ -788,6 +792,13 @@ const acts = {
     DEF.sampleTeams.forEach(t => S.teams.push({id: uid(), name: t.name, staff: t.staff || '', players: t.players.map(p => ({id: uid(), name: p.name, n: p.n || '', f: toArr(p.f), ph: p.ph || ''}))}));
     save(); render(); toast('Sample teams added');
   },
+  async 'app-refresh'() {
+    try {
+      if ('serviceWorker' in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map(r => r.unregister()));
+      if (window.caches) await Promise.all((await caches.keys()).map(k => caches.delete(k)));
+    } catch (e) { /* reload anyway */ }
+    location.reload();
+  },
   wipe(el) { if (!arm(el)) return; S = blank(); save(); render(); }
 };
 function importJson(txt) {
@@ -869,7 +880,7 @@ async function boot() {
     d.sampleTeams = Array.isArray(d.sampleTeams) ? d.sampleTeams : [];
     DEF = d;
   } catch (e) { defaultsOK = false; }
-  S = load(); render();
+  S = load(); render(); readVer();
   if (!defaultsOK) toast('defaults.json could not be loaded, using minimal built-in defaults');
 }
 boot();
