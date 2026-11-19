@@ -190,10 +190,11 @@ function migrate(S) {
   S.sports.forEach(normSport);
   if (!S.templates) S.templates = {};
   const sid = id => OLD_SPORT_IDS[id] || id;
-  S.teams.forEach(t => t.players.forEach(p => { p.f = toArr(p.f); }));
+  const known = new Set(S.tags.map(t => t.code));
+  S.teams.forEach(t => t.players.forEach(p => { p.f = toArr(p.f).filter(c => known.has(c)); }));
   S.games.forEach(g => {
     g.clk = false;
-    ['home', 'away'].forEach(s => g.roster[s].forEach(e => { e.f = toArr(e.f); }));
+    ['home', 'away'].forEach(s => g.roster[s].forEach(e => { e.f = toArr(e.f).filter(c => known.has(c)); }));
     g.sport = sid(g.sport);
     if (!g.sp) g.sp = clone(S.sports.find(x => x.id === g.sport) || S.sports[0]);
     normSport(g.sp);
@@ -422,7 +423,7 @@ function sportCard(s) {
     '<button data-act="card-add" data-id="' + id + '">+ Card</button></div>';
 }
 function viewSettings() {
-  const tags = S.tags.map((t, i) => '<div class="row" style="margin-bottom:6px;flex-wrap:nowrap"><input style="width:80px" value="' + esc(t.code) + '" data-inp="tag" data-i="' + i + '" data-k="code" placeholder="Code">' +
+  const tags = S.tags.map((t, i) => '<div class="row" style="margin-bottom:6px;flex-wrap:nowrap"><input style="width:80px" value="' + esc(t.code) + '" data-orig="' + esc(t.code) + '" data-inp="tag" data-i="' + i + '" data-k="code" placeholder="Code">' +
     '<input class="grow" style="width:auto" value="' + esc(t.label) + '" data-inp="tag" data-i="' + i + '" data-k="label" placeholder="Label">' +
     '<button data-act="tag-col" data-i="' + i + '" style="background:' + COLORS[t.c % COLORS.length] + ';min-width:44px"></button>' +
     '<button class="' + (t.top ? 'on' : '') + '" data-act="tag-top" data-i="' + i + '">Priority</button>' +
@@ -838,6 +839,15 @@ document.addEventListener('change', e => {
   const el = e.target;
   if (el.id === 'impfile' && el.files[0]) { el.files[0].text().then(importJson); return; }
   if (el.dataset && el.dataset.inp === 'draft') { inps.draft(el); save(); return; }
+  if (el.dataset && el.dataset.inp === 'tag' && el.dataset.k === 'code') {
+    const o = el.dataset.orig, n = el.value.trim();
+    if (o && n && o !== n) {
+      const re = f => normF(f.map(x => x === o ? n : x));
+      S.teams.forEach(t => t.players.forEach(p => { p.f = re(p.f); }));
+      S.games.forEach(g => ['home', 'away'].forEach(sd => g.roster[sd].forEach(x => { x.f = re(x.f); })));
+    }
+    save(); render(); return;
+  }
   if (el.dataset && el.dataset.rr) render();
 });
 
