@@ -6,11 +6,11 @@ It runs entirely in the browser (plain HTML, CSS and JavaScript, no build step, 
 
 ## Features
 
-- **Schedule**: your announcement script per game (sponsors, standings, notices), split into pre-game, breaks and post-game. Every item can carry a detail text. Items are checked off while you announce them, breaks are tracked separately per period. Save a schedule as a template per sport.
+- **Schedule**: your announcement script per game (sponsors, standings, notices), split into pre-game, breaks and post-game. Every item can carry a detail text. Pre-game items are checked off in the Intro tab, breaks and post-game in the Game tab. The Breaks checklist can be reset for every period or carried over (set per sport, see *Settings*). Save a schedule as a template per sport.
 - **Check-in**: confirm who is present, change numbers on the spot, set tags (goalkeeper, captain, ...), add pronunciation hints, enter coaches and officials. Duplicate numbers are highlighted.
 - **Intro**: large, readable introduction lists: Pre-game items (the match as "Home vs Away" plus your own items from the Schedule, e.g. last meeting, standings, top scorers), officials, away team and home team. Tap to strike off a name, or use the *Announce next* button to strike off the next one and scroll on. Coaches can be listed before or after the players.
-- **Game**: both rosters side by side. Tap a player to log a goal (or foul or penalty, depending on the mode). Running score, scorers in the top bar (sorted by goals, then number), event log with seconds, undo.
-- **Penalty timers**: assign a penalty and a player, the countdown starts only when you tell the app that play has resumed. Visual warning before the end, full-screen flashing at expiry until you confirm, so a return to play is never forgotten. The clock stops automatically when no penalty is left.
+- **Game**: both rosters side by side. Tap a player to log a goal (or foul or penalty, depending on the mode). Running score, scorers in the top bar (sorted by goals, then number), undo. The event log shows time with seconds, period (e.g. `2/2`), player and action.
+- **Penalty timers**: assign a penalty and a player, the countdown starts only when you tell the app that play has resumed. Visual warning before the end, full-screen flashing at expiry until you confirm, so a return to play is never forgotten. The clock stops automatically when no penalty is left. The time of a penalty event is set to the moment its countdown actually starts.
 - **Fouls** (optional per sport): counted per player with a limit, e.g. water polo. Per sport you can choose whether the app stays in foul or penalty mode after an entry ("Keep mode") or switches back to scoring.
 - **Generic by design**: sports, number and names of periods (halves, quarters, sets, innings, ...), scoring name, penalty durations and player tags are all configurable.
 - **Roster import**: paste a table copied from Word, a PDF or a web page.
@@ -40,7 +40,7 @@ Players without a number are imported without one. The import warns about duplic
 ## Settings
 
 - **Tags**: short codes with a label and colour, e.g. `T` goalkeeper, `K` captain. Tags marked *Priority* are listed first in lineups.
-- **Sports**: name, number of periods, period name, scoring name, penalty durations in seconds and optional foul tracking with a limit. Defaults are provided for indoor and field hockey, water polo, volleyball, basketball, ice hockey, handball and baseball. A game keeps the settings it was created with.
+- **Sports**: name, number of periods, period name, scoring name, penalty durations in seconds and optional foul tracking with a limit, *Keep mode* (stay in foul or penalty mode after an entry) and whether the Breaks checklist is reset for every period. Defaults are provided for indoor and field hockey, water polo, volleyball, basketball, ice hockey, handball and baseball. A game keeps the settings it was created with.
 
 ## Deployment
 

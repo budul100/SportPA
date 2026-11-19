@@ -380,7 +380,8 @@ function viewSettings() {
     '<div><label>Penalty durations in seconds, comma separated (empty = no penalty timers)</label><input value="' + esc(s.pen.join(', ')) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="pen">' +
     '<label>Fouls per player</label><div class="row"><button class="' + (s.fouls ? 'on' : '') + '" data-act="sp-fouls" data-id="' + esc(s.id) + '">' + (s.fouls ? 'Tracked' : 'Off') + '</button>' +
     '<input type="number" min="1" style="width:90px" value="' + s.foulLimit + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="foulLimit"><span class="mute small">fouls until out</span></div>' +
-    '<label>Stay in foul / penalty mode after each entry (otherwise it switches back to ' + esc(s.score.toLowerCase()) + ')</label><button class="' + (s.keep ? 'on' : '') + '" data-act="sp-keep" data-id="' + esc(s.id) + '">' + (s.keep ? 'Keep mode: on' : 'Keep mode: off') + '</button></div></div></div>').join('');
+    '<label>Stay in foul / penalty mode after each entry (otherwise it switches back to ' + esc(s.score.toLowerCase()) + ')</label><button class="' + (s.keep ? 'on' : '') + '" data-act="sp-keep" data-id="' + esc(s.id) + '">' + (s.keep ? 'Keep mode: on' : 'Keep mode: off') + '</button>' +
+    '<label>Reset the Breaks checklist for every ' + esc(s.label.toLowerCase()) + ' (otherwise checks stay until you reset them)</label><button class="' + (s.brkReset !== false ? 'on' : '') + '" data-act="sp-brk" data-id="' + esc(s.id) + '">' + (s.brkReset !== false ? 'Reset per ' + esc(s.label.toLowerCase()) + ': on' : 'Reset per ' + esc(s.label.toLowerCase()) + ': off') + '</button></div></div></div>').join('');
   return '<h2>Settings</h2><div class="grid2"><div><div class="card"><h3>Player tags</h3><div class="mute small" style="margin-bottom:8px">Short codes shown next to a player, e.g. goalkeeper or captain. The code is also what the roster import recognises. Priority tags are listed first in lineups.</div>' + tags +
     '<button data-act="tag-add" style="margin-top:6px">+ Tag</button></div></div>' +
     '<div><div class="card"><h3>Sports</h3><div class="mute small" style="margin-bottom:8px">Changes apply to new games. Existing games keep the settings they were created with.</div>' + sports + '<button data-act="sp-add">+ Sport</button></div></div></div>';
@@ -412,7 +413,7 @@ function viewPlan() {
     '<button class="danger" data-act="p-del" data-ph="' + k + '" data-id="' + it.id + '">×</button></div>' +
     '<textarea placeholder="Details: sponsor text, standings, notes ..." data-inp="pi" data-ph="' + k + '" data-id="' + it.id + '" data-k="d">' + esc(it.d) + '</textarea></div>').join('') +
     '<button data-act="p-add" data-ph="' + k + '" style="margin-top:8px">+ Add item</button></div>';
-  return '<h2>Schedule</h2><div class="mute small" style="margin-bottom:10px">Your script for this game. Items and their details show up as a checklist: Pre-game in the Intro tab, Breaks and Post-game in the Game tab. Breaks are checked off separately for every ' + esc(spOf(g).label.toLowerCase()) + '.</div>' +
+  return '<h2>Schedule</h2><div class="mute small" style="margin-bottom:10px">Your script for this game. Items and their details show up as a checklist: Pre-game in the Intro tab, Breaks and Post-game in the Game tab. ' + (spOf(g).brkReset !== false ? 'Breaks are checked off separately for every ' + esc(spOf(g).label.toLowerCase()) + '.' : 'Breaks checks carry over between periods; reset them in the Game tab.') + '</div>' +
     '<div class="grid2"><div>' + sec(PH[0]) + sec(PH[2]) + '</div><div>' + sec(PH[1]) +
     '<div class="card"><button data-act="p-tpl">Save as template for ' + esc(spOf(g).name) + '</button><div class="mute small" style="margin-top:6px">New ' + esc(spOf(g).name) + ' games start with this schedule.</div></div></div></div>';
 }
@@ -479,7 +480,7 @@ function pcard(g, side, e, sp) {
     '<span class="bd">' + e.f.map(c => badge(c) + ' ').join('') +
     (goals ? '<span class="pill p-g">' + esc(sp.score) + ' ' + goals + '</span>' : '') + (fouls ? '<span class="pill p-f">Foul ' + fouls + (out ? ' OUT' : '') + '</span>' : '') + (pens ? '<span class="pill p-p">Pen ' + pens + '</span>' : '') + '</span></span></button>';
 }
-const rKey = (g, ph, id) => ph + (ph === 'brk' ? g.per : '') + '|' + id;
+const rKey = (g, ph, id) => ph + (ph === 'brk' && spOf(g).brkReset !== false ? g.per : '') + '|' + id;
 function rbPanel(g) {
   const ph = S.ui.phase === 'post' ? 'post' : 'brk', items = g.plan[ph], sp = spOf(g);
   const done = items.filter(i => g.chk[rKey(g, ph, i.id)]).length;
@@ -577,6 +578,7 @@ const acts = {
   'tag-top'(el) { const t = S.tags[+el.dataset.i]; t.top = !t.top; save(); render(); },
   'sp-add'() { S.sports.push(sp0('sp-' + uid(), 'New sport', 2, 'Half', 'Goal', [], false, 3)); save(); render(); },
   'sp-del'(el) { if (!arm(el)) return; if (S.sports.length < 2) { toast('Keep at least one sport'); return; } S.sports = S.sports.filter(s => s.id !== el.dataset.id); save(); render(); },
+  'sp-brk'(el) { const x = S.sports.find(q => q.id === el.dataset.id); x.brkReset = x.brkReset === false; save(); render(); },
   'sp-keep'(el) { const x = S.sports.find(q => q.id === el.dataset.id); x.keep = !x.keep; save(); render(); },
   'sp-fouls'(el) { const s = S.sports.find(x => x.id === el.dataset.id); s.fouls = !s.fouls; save(); render(); },
   /* games */
