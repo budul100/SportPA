@@ -556,11 +556,11 @@ const rKey = (g, ph, id) => ph + (ph === 'brk' && spOf(g).brkReset !== false ? g
 function rbPanel(g) {
   const ph = S.ui.phase === 'post' ? 'post' : 'brk', items = g.plan[ph], sp = spOf(g);
   const done = items.filter(i => g.chk[rKey(g, ph, i.id)]).length;
-  return '<div class="card"><div class="tabs">' + PH.filter(p => p[0] !== 'pre').map(p => '<button class="' + (ph === p[0] ? 'on' : '') + '" data-act="phase" data-p="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
+  return '<div class="card"><div class="tabs">' + PH.filter(p => p[0] !== 'pre').map(p => '<button class="' + (ph === p[0] ? 'on' : '') + '" data-act="phase" data-p="' + p[0] + '">' + p[1] + '</button>').join('') +
+    '<button data-act="rreset" style="flex:none;width:44px" title="Reset checks" aria-label="Reset checks">' + ico('reset') + '</button></div>' +
     '<div class="mute small" style="margin-bottom:8px">' + done + ' of ' + items.length + ' announced' + (ph === 'brk' ? ' · after ' + esc(g.per <= sp.periods ? sp.label.toLowerCase() + ' ' + g.per : sp.otLabel + (g.per - sp.periods)) : '') + '</div>' +
     items.map(i => { const d = g.chk[rKey(g, ph, i.id)]; return '<div class="ritem ' + (d ? 'done' : '') + '" data-act="rchk" data-id="' + i.id + '"><span class="badge">' + (d ? '✓' : '') + '</span><div><div class="rt">' + esc(i.t || '(untitled)') + '</div>' + (i.d ? '<div class="rd">' + esc(i.d) + '</div>' : '') + '</div></div>'; }).join('') +
-    '<div class="row" style="margin-top:8px"><input id="qa" class="grow" style="width:auto" placeholder="Add item ..."><button data-act="p-qadd" title="Add item" aria-label="Add item">' + ico('plus') + '</button></div>' +
-    '<div class="row" style="margin-top:8px"><button data-act="rreset" title="Reset checks" aria-label="Reset checks">' + ico('reset') + '</button><button data-act="view" data-v="plan" title="Edit schedule" aria-label="Edit schedule">' + ico('edit') + '</button></div></div>';
+    '<div class="row" style="margin-top:8px"><input id="qa" class="grow" style="width:auto" placeholder="Add item ..."><button data-act="p-qadd" title="Add item" aria-label="Add item">' + ico('plus') + '</button></div></div>';
 }
 function viewPlay() {
   const g = cur(), sp = spOf(g);
