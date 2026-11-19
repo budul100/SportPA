@@ -466,7 +466,8 @@ function ciSide(g, side) {
     '<input placeholder="Name" value="' + esc(e.name) + '" data-inp="ci-f" data-k="name" data-side="' + side + '" data-id="' + e.id + '">' +
     '<input placeholder="Say as" value="' + esc(e.ph || '') + '" data-inp="ci-f" data-k="ph" data-side="' + side + '" data-id="' + e.id + '">' +
     '<button data-act="ci-del" data-side="' + side + '" data-id="' + e.id + '">×</button></div>').join('');
-  return '<div class="card"><h3 style="color:var(--' + side + ')">' + (side === 'home' ? 'Home' : 'Away') + ': ' + esc(g[side].name) + ' <span class="mute small">' + on + ' of ' + L.length + ' present</span></h3>' +
+  return '<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h3 style="color:var(--' + side + ');margin:0">' + (side === 'home' ? 'Home' : 'Away') + ': ' + esc(g[side].name) + ' <span class="mute small">' + on + ' of ' + L.length + ' present</span></h3>' +
+    (L.length ? '<button data-act="ci-all" data-side="' + side + '" data-v="' + (on < L.length ? '1' : '0') + '">' + (on < L.length ? 'Activate all' : 'Deactivate all') + '</button>' : '') + '</div>' +
     '<label>Coaches / staff</label><input value="' + esc(g[side].staff) + '" data-inp="gs" data-side="' + side + '">' +
     (dups.size ? '<div class="warnbox">Duplicate number: ' + [...dups].map(esc).join(', ') + '</div>' : '') + '<div style="margin-top:8px">' + rows + '</div>' +
     '<div class="row" style="margin-top:8px"><button data-act="ci-add" data-side="' + side + '">+ Player</button><button data-act="ci-sort" data-side="' + side + '">Sort by number</button><button data-act="ci-save" data-side="' + side + '">Save numbers to team</button></div></div>';
@@ -721,7 +722,7 @@ const acts = {
   newgame() {
     const d = S.ui.draft, th = S.teams.find(t => t.id === d.home), ta = S.teams.find(t => t.id === d.away), sp = S.sports.find(s => s.id === d.sport) || S.sports[0];
     if (!th || !ta || th === ta) { toast('Please choose two different teams'); return; }
-    const mk = t => t.players.map(p => ({id: uid(), tp: p.id, name: p.name, n: p.n, f: p.f.slice(), ph: p.ph || '', on: true}));
+    const mk = t => t.players.map(p => ({id: uid(), tp: p.id, name: p.name, n: p.n, f: p.f.slice(), ph: p.ph || '', on: false}));
     const g = {id: uid(), sport: sp.id, sp: clone(sp), date: d.date, home: {tid: th.id, name: th.name, staff: th.staff || ''}, away: {tid: ta.id, name: ta.name, staff: ta.staff || ''},
       roster: {home: mk(th), away: mk(ta)}, ref: '', plan: mkPlan(sp.id, S), ann: {}, chk: {}, ev: [], tm: [], per: 1, clk: false};
     S.games.unshift(g); S.cur = g.id; S.ui.view = 'plan'; save(); render();
@@ -740,6 +741,7 @@ const acts = {
   rreset() { const g = cur(), ph = S.ui.phase; g.plan[ph].forEach(i => { delete g.chk[rKey(g, ph, i.id)]; }); save(); render(); },
   rbtoggle() { S.ui.rb = !S.ui.rb; save(); render(); },
   /* check-in */
+  'ci-all'(el) { const v = el.dataset.v === '1'; cur().roster[el.dataset.side].forEach(e => { e.on = v; }); save(); render(); },
   'ci-on'(el) { const e = findE(cur(), el.dataset.side, el.dataset.id); e.on = !e.on; save(); render(); },
   'ci-flag'(el) { const e = findE(cur(), el.dataset.side, el.dataset.id); e.f = toggleF(e.f, el.dataset.f); save(); render(); },
   'ci-del'(el) { const g = cur(); g.roster[el.dataset.side] = g.roster[el.dataset.side].filter(e => e.id !== el.dataset.id); save(); render(); },
