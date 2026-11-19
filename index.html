@@ -640,11 +640,13 @@ function viewData() {
     '<div class="row"><button class="pri" data-act="exp">Save as file</button><button data-act="expcopy">Copy to clipboard</button></div>' +
     '<label>Load backup file (replaces everything)</label><input type="file" accept=".json,application/json" id="impfile">' +
     '<label>Or paste JSON</label><textarea id="impdata" placeholder="{...}"></textarea>' +
-    '<div style="margin-top:8px"><button class="danger" data-act="impdata">Import (replaces everything)</button></div>' + dataMsg + '</div></div>' +
-    '<div><div class="card"><h3>Sample data</h3><div class="mute small">Fictional teams from defaults.json to try things out (with a duplicate number and a player without number).</div><div style="margin-top:8px"><button data-act="sample">Add sample teams</button></div></div>' +
-    '<div class="card"><h3>Default sports</h3><div class="mute small">Presets come from defaults.json. This restores all sports that ship with the app to their preset values (own sports are kept). Existing games keep their settings.</div><div style="margin-top:8px"><button class="danger" data-act="defs-reset">Reset default sports</button></div></div>' +
-    '<div class="card"><h3>App version <span class="verv">' + esc(appVer || '…') + '</span></h3><div class="mute small">If an installed copy keeps showing old behaviour: this clears the app cache and reloads it. Your teams, games and settings are kept.</div><div style="margin-top:8px"><button data-act="app-refresh">Clear app cache and reload</button></div></div>' +
-    '<div class="card"><h3>Delete everything</h3><button class="danger" data-act="wipe">Delete all data</button></div></div></div>';
+    '<div style="margin-top:8px"><button class="danger" data-act="impdata">Import (replaces everything)</button></div>' + dataMsg + '</div>' +
+    '<div class="card"><h3>Sample data</h3><div class="mute small">Fictional teams from defaults.json to try things out (with a duplicate number and a player without number).</div><div style="margin-top:8px"><button data-act="sample">Add sample teams</button></div></div>' +
+    '</div>' +
+    '<div>' +
+'<div class="card"><h3>App version <span class="verv">' + esc(appVer || '…') + '</span></h3><div class="mute small">If an installed copy keeps showing old behaviour: this clears the app cache and reloads it. Your teams, games and settings are kept.</div><div style="margin-top:8px"><button data-act="app-refresh">Clear app cache and reload</button></div></div>' +
+'<div class="card"><h3>Default sports</h3><div class="mute small">Presets come from defaults.json. This restores all sports that ship with the app to their preset values (own sports are kept). Existing games keep their settings.</div><div style="margin-top:8px"><button class="danger" data-act="defs-reset">Reset default sports</button></div></div>' +
+'<div class="card"><h3>Delete everything</h3><button class="danger" data-act="wipe">Delete all data</button></div></div></div>';
 }
 let dataMsg = '';
 
