@@ -53,6 +53,8 @@ input.dup{border-color:var(--warn);background:#3a2d12}
 .intro .ph{font-size:18px;color:var(--acc);font-weight:500}
 .intro.done{opacity:.35}
 .intro.done .nm{text-decoration:line-through}
+.intro .dt{font-size:20px;font-weight:500;color:#c9d6e4;white-space:pre-wrap;margin-top:4px}
+.intro.done .dt{display:none}
 .top{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between}
 .score{font-size:34px;font-weight:800;display:flex;gap:14px;align-items:center}
 .score .h{color:var(--home);font-size:18px;max-width:240px}.score .a{color:var(--away);font-size:18px;max-width:240px}
@@ -144,7 +146,7 @@ const DEF_SPORTS = [
 ];
 const PH = [['pre', 'Pre-game'], ['brk', 'Breaks'], ['post', 'Post-game']];
 const DEF_PLAN = {
-  pre: ['Welcome', 'Standings / table', 'Team comparison', 'Introduce officials', 'Introduce away team', 'Introduce home team', 'Sponsors and notices', 'Start of game'],
+  pre: ['Last meeting', 'Standings', 'Top scorers', 'Sponsors and notices'],
   brk: ['Score update', 'Goal scorers', 'Sponsors', 'Next home game', 'Notices'],
   post: ['Final score', 'Goal scorers', 'Thank you', 'Next home game']
 };
@@ -169,7 +171,7 @@ const ico = n => '<svg class="ico" viewBox="0 0 24 24" width="20" height="20" fi
 /* ---------- state ---------- */
 function blank() {
   return {teams: [], games: [], tags: clone(DEF_TAGS), sports: clone(DEF_SPORTS), templates: {}, cur: null,
-    ui: {view: 'games', team: null, gk: true, side: 'ref', mode: 'goal', pen: null, phase: 'pre', rb: true, evp: false, hold: false, coachFirst: false,
+    ui: {view: 'games', team: null, gk: true, side: 'pre', mode: 'goal', pen: null, phase: 'brk', rb: true, evp: false, hold: false, coachFirst: false,
       draft: {sport: DEF_SPORTS[1].id, home: '', away: '', date: today()}}};
 }
 function mkPlan(spId, S) {
@@ -194,8 +196,8 @@ function migrate(S) {
   });
   const d = S.ui.draft; d.sport = sid(d.sport);
   if (!S.sports.find(x => x.id === d.sport)) d.sport = S.sports[0].id;
-  if (!['ref', 'away', 'home'].includes(S.ui.side)) S.ui.side = 'ref';
-  if (!['pre', 'brk', 'post'].includes(S.ui.phase)) S.ui.phase = 'pre';
+  if (!['pre', 'ref', 'away', 'home'].includes(S.ui.side)) S.ui.side = 'pre';
+  if (!['brk', 'post'].includes(S.ui.phase)) S.ui.phase = 'brk';
   if (S.ui.rb == null) S.ui.rb = true;
   if (S.ui.evp == null) S.ui.evp = false;
   if (S.ui.hold == null) S.ui.hold = false;
@@ -322,7 +324,7 @@ function nav() {
   const v = S.ui.view, g = cur();
   const b = (k, t, ti) => '<button data-act="view" data-v="' + k + '"' + (ti ? ' title="' + ti + '" aria-label="' + ti + '"' : '') + ' class="' + (v === k ? 'on' : '') + '">' + t + '</button>';
   return '<nav><img class="brandimg" src="icon-192.png" alt="SportPA" title="SportPA">' + b('games', 'Games') + b('teams', 'Teams') + b('settings', ico('gear'), 'Settings') + '<span class="sep"></span>' +
-    (g ? b('plan', 'Schedule') + b('checkin', 'Check-in') + b('intro', 'Lineups') + b('play', 'Game') : '') +
+    (g ? b('plan', 'Schedule') + b('checkin', 'Check-in') + b('intro', 'Intro') + b('play', 'Game') : '') +
     '<span class="sep"></span>' + b('data', ico('disk'), 'Data') +
     '<span class="navr">' + (g ? '<span class="mute small">' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</span>' : '') + '<b id="now" class="now"></b></span></nav>';
 }
@@ -410,24 +412,30 @@ function viewPlan() {
     '<button class="danger" data-act="p-del" data-ph="' + k + '" data-id="' + it.id + '">×</button></div>' +
     '<textarea placeholder="Details: sponsor text, standings, notes ..." data-inp="pi" data-ph="' + k + '" data-id="' + it.id + '" data-k="d">' + esc(it.d) + '</textarea></div>').join('') +
     '<button data-act="p-add" data-ph="' + k + '" style="margin-top:8px">+ Add item</button></div>';
-  return '<h2>Schedule</h2><div class="mute small" style="margin-bottom:10px">Your script for this game. Items and their details show up as a checklist in the Game tab. Breaks are checked off separately for every ' + esc(spOf(g).label.toLowerCase()) + '.</div>' +
+  return '<h2>Schedule</h2><div class="mute small" style="margin-bottom:10px">Your script for this game. Items and their details show up as a checklist: Pre-game in the Intro tab, Breaks and Post-game in the Game tab. Breaks are checked off separately for every ' + esc(spOf(g).label.toLowerCase()) + '.</div>' +
     '<div class="grid2"><div>' + sec(PH[0]) + sec(PH[2]) + '</div><div>' + sec(PH[1]) +
     '<div class="card"><button data-act="p-tpl">Save as template for ' + esc(spOf(g).name) + '</button><div class="mute small" style="margin-top:6px">New ' + esc(spOf(g).name) + ' games start with this schedule.</div></div></div></div>';
 }
 
 const staffList = (g, side) => String(g[side].staff || '').split(/[,\/\n]+/).map(x => x.trim()).filter(Boolean);
+function preItems(g) { return [{id: 'match', t: g.home.name + ' vs ' + g.away.name, d: ''}].concat(g.plan.pre); }
 function introIds(g, side) {
+  if (side === 'pre') return preItems(g).map(i => 'pre:' + i.id);
   if (side === 'ref') return refs(g).map((_, i) => 'ref:' + i);
   const co = staffList(g, side).map((_, i) => 'coach:' + side + ':' + i), pl = ordered(g.roster[side].filter(e => e.on)).map(e => e.id);
   return S.ui.coachFirst ? co.concat(pl) : pl.concat(co);
 }
 function viewIntro() {
   const g = cur(), side = S.ui.side;
-  const tabs = '<div class="row" style="margin-bottom:10px"><button class="' + (side === 'ref' ? 'on' : '') + '" data-act="iside" data-side="ref">Officials</button>' +
+  const tabs = '<div class="row" style="margin-bottom:10px"><button class="' + (side === 'pre' ? 'on' : '') + '" data-act="iside" data-side="pre">Pre-game</button><button class="' + (side === 'ref' ? 'on' : '') + '" data-act="iside" data-side="ref">Officials</button>' +
     '<button class="' + (side === 'away' ? 'on' : '') + '" data-act="iside" data-side="away">Away: ' + esc(g.away.name) + '</button>' +
     '<button class="' + (side === 'home' ? 'on' : '') + '" data-act="iside" data-side="home">Home: ' + esc(g.home.name) + '</button><span class="grow"></span>' +
-    (side !== 'ref' ? '<button class="' + (S.ui.coachFirst ? 'on' : '') + '" data-act="coachfirst">Coaches first</button>' : '') +
-    '<button class="' + (S.ui.gk ? 'on' : '') + '" data-act="gk">Priority tags first</button><button data-act="annreset" title="Reset checks" aria-label="Reset checks">' + ico('reset') + '</button></div>';
+    (side !== 'ref' && side !== 'pre' ? '<button class="' + (S.ui.coachFirst ? 'on' : '') + '" data-act="coachfirst">Coaches first</button>' : '') +
+    (side === 'pre' || side === 'ref' ? '' : '<button class="' + (S.ui.gk ? 'on' : '') + '" data-act="gk">Priority tags first</button>') + '<button data-act="annreset" title="Reset checks" aria-label="Reset checks">' + ico('reset') + '</button></div>';
+  if (side === 'pre') {
+    return tabs + preItems(g).map(i => '<button class="intro ' + (g.ann['pre:' + i.id] ? 'done' : '') + '" data-act="ann" data-id="pre:' + i.id + '"><span><span class="nm">' + esc(i.t || '(untitled)') + '</span>' + (i.d ? '<div class="dt">' + esc(i.d) + '</div>' : '') + '</span></button>').join('') +
+      '<div class="row"><button data-act="view" data-v="plan" title="Edit schedule" aria-label="Edit schedule">' + ico('edit') + '</button></div>';
+  }
   if (side === 'ref') {
     const R = refs(g);
     return tabs + (R.map((n, i) => '<button class="intro ' + (g.ann['ref:' + i] ? 'done' : '') + '" data-act="ann" data-id="ref:' + i + '"><span class="nm">' + esc(n) + '</span></button>').join('') ||
@@ -473,9 +481,9 @@ function pcard(g, side, e, sp) {
 }
 const rKey = (g, ph, id) => ph + (ph === 'brk' ? g.per : '') + '|' + id;
 function rbPanel(g) {
-  const ph = S.ui.phase, items = g.plan[ph], sp = spOf(g);
+  const ph = S.ui.phase === 'post' ? 'post' : 'brk', items = g.plan[ph], sp = spOf(g);
   const done = items.filter(i => g.chk[rKey(g, ph, i.id)]).length;
-  return '<div class="card"><div class="tabs">' + PH.map(p => '<button class="' + (ph === p[0] ? 'on' : '') + '" data-act="phase" data-p="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
+  return '<div class="card"><div class="tabs">' + PH.filter(p => p[0] !== 'pre').map(p => '<button class="' + (ph === p[0] ? 'on' : '') + '" data-act="phase" data-p="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
     '<div class="mute small" style="margin-bottom:8px">' + done + ' of ' + items.length + ' announced' + (ph === 'brk' ? ' · after ' + esc(sp.label.toLowerCase()) + ' ' + g.per : '') + '</div>' +
     items.map(i => { const d = g.chk[rKey(g, ph, i.id)]; return '<div class="ritem ' + (d ? 'done' : '') + '" data-act="rchk" data-id="' + i.id + '"><span class="badge">' + (d ? '✓' : '') + '</span><div><div class="rt">' + esc(i.t || '(untitled)') + '</div>' + (i.d ? '<div class="rd">' + esc(i.d) + '</div>' : '') + '</div></div>'; }).join('') +
     '<div class="row" style="margin-top:8px"><input id="qa" class="grow" style="width:auto" placeholder="Add item ..."><button data-act="p-qadd" title="Add item" aria-label="Add item">' + ico('plus') + '</button></div>' +
@@ -610,10 +618,10 @@ const acts = {
   ann(el) { const g = cur(); g.ann[el.dataset.id] = !g.ann[el.dataset.id]; save(); render(); },
   annreset() { cur().ann = {}; save(); render(); },
   'ann-next'() {
-    const g = cur(), order = ['ref', 'away', 'home'], names = {ref: 'Officials', away: 'Away team', home: 'Home team'};
+    const g = cur(), order = ['pre', 'ref', 'away', 'home'], names = {pre: 'Pre-game', ref: 'Officials', away: 'Away team', home: 'Home team'};
     const open = sd => introIds(g, sd).find(x => !g.ann[x]);
     const nextTab = from => { const k = order.indexOf(from); for (let n = 1; n < order.length; n++) { const sd = order[(k + n) % order.length]; if (open(sd)) return sd; } return null; };
-    const goGame = () => { S.ui.view = 'play'; if (S.ui.phase === 'pre') S.ui.phase = 'brk'; save(); render(); window.scrollTo(0, 0); toast('Lineups done: game on'); };
+    const goGame = () => { S.ui.view = 'play'; if (S.ui.phase === 'pre') S.ui.phase = 'brk'; save(); render(); window.scrollTo(0, 0); toast('Intro done: game on'); };
     const jump = sd => { S.ui.side = sd; save(); render(); window.scrollTo({top: 0, behavior: 'smooth'}); toast('Next: ' + names[sd]); };
     const side = S.ui.side, id = open(side);
     if (!id) { const sd = nextTab(side); if (sd) jump(sd); else goGame(); return; }

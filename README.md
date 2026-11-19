@@ -8,7 +8,7 @@ It runs entirely in the browser (plain HTML, CSS and JavaScript, no build step, 
 
 - **Schedule**: your announcement script per game (sponsors, standings, notices), split into pre-game, breaks and post-game. Every item can carry a detail text. Items are checked off while you announce them, breaks are tracked separately per period. Save a schedule as a template per sport.
 - **Check-in**: confirm who is present, change numbers on the spot, set tags (goalkeeper, captain, ...), add pronunciation hints, enter coaches and officials. Duplicate numbers are highlighted.
-- **Lineups**: large, readable introduction lists for officials, away team and home team. Tap to strike off a name, or use the *Announce next* button to strike off the next one and scroll on. Coaches can be listed before or after the players.
+- **Intro**: large, readable introduction lists: Pre-game items (the match as "Home vs Away" plus your own items from the Schedule, e.g. last meeting, standings, top scorers), officials, away team and home team. Tap to strike off a name, or use the *Announce next* button to strike off the next one and scroll on. Coaches can be listed before or after the players.
 - **Game**: both rosters side by side. Tap a player to log a goal (or foul or penalty, depending on the mode). Running score, scorers in the top bar (sorted by goals, then number), event log with seconds, undo.
 - **Penalty timers**: assign a penalty and a player, the countdown starts only when you tell the app that play has resumed. Visual warning before the end, full-screen flashing at expiry until you confirm, so a return to play is never forgotten. The clock stops automatically when no penalty is left.
 - **Fouls** (optional per sport): counted per player with a limit, e.g. water polo. Per sport you can choose whether the app stays in foul or penalty mode after an entry ("Keep mode") or switches back to scoring.
@@ -22,7 +22,7 @@ It runs entirely in the browser (plain HTML, CSS and JavaScript, no build step, 
 1. Open the app (see *Deployment* below) and add it to your home screen.
 2. **Teams**: import or create two teams. *Data > Add sample teams* gives you two fictional ones to try things out.
 3. **Games**: choose sport, home and away team, create the game.
-4. Work through the tabs: **Schedule**, **Check-in**, **Lineups**, **Game**.
+4. Work through the tabs: **Schedule**, **Check-in**, **Intro**, **Game**.
 
 ## Roster import
 
