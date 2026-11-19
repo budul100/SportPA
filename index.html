@@ -350,9 +350,9 @@ function parseRoster(text) {
 function nav() {
   const v = S.ui.view, g = cur();
   const b = (k, t, ti) => '<button data-act="view" data-v="' + k + '"' + (ti ? ' title="' + ti + '" aria-label="' + ti + '"' : '') + ' class="' + (v === k ? 'on' : '') + '">' + t + '</button>';
-  return '<nav><img class="brandimg" src="icon-192.png" alt="SportPA" title="SportPA"><span id="ver" class="ver">' + esc(appVer) + '</span>' + b('games', 'Games') + b('teams', 'Teams') + b('settings', ico('gear'), 'Settings') + '<span class="sep"></span>' +
+  return '<nav><img class="brandimg" src="icon-192.png" alt="SportPA" title="SportPA"><span id="ver" class="ver">' + esc(appVer) + '</span>' + b('games', 'Games') + b('teams', 'Teams') + '<span class="sep"></span>' +
     (g ? b('plan', 'Schedule') + b('checkin', 'Check-in') + b('intro', 'Intro') + b('play', 'Game') : '') +
-    '<span class="sep"></span>' + b('data', ico('disk'), 'Data') +
+    '<span class="sep"></span>' + b('data', ico('disk'), 'Data') + b('settings', ico('gear'), 'Settings') +
     '<span class="navr">' + (g ? '<span class="mute small">' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</span>' : '') + '<b id="now" class="now"></b></span></nav>';
 }
 
