@@ -87,7 +87,7 @@ After the first load the app works without any network connection. Open it once 
 
 ### Updating
 
-When you change `index.html` or `defaults.json`, increase `VERSION` in `sw.js` (for example `sportpa-v20`), otherwise installed copies keep serving the old cached version. The service worker serves from the cache and refreshes it in the background, so devices pick up the new version on the next start after opening the app online (a second restart may be needed). The current version is shown in small text in the top right corner. If an installed copy is stuck on an old version, use *Data > Clear app cache and reload* (data is kept). Note that an app added to the home screen has its own storage, so clearing Safari's website data does not reset it.
+When you change `index.html` or `defaults.json`, increase `VERSION` in `sw.js` (for example `sportpa-v21`), otherwise installed copies keep serving the old cached version. The service worker serves from the cache and refreshes it in the background, so devices pick up the new version on the next start after opening the app online (a second restart may be needed). The current version is shown in small text in the top right corner. If an installed copy is stuck on an old version, use *Data > Clear app cache and reload* (data is kept). Note that an app added to the home screen has its own storage, so clearing Safari's website data does not reset it.
 
 ## Data and backup
 

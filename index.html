@@ -790,8 +790,14 @@ const acts = {
   impdata(el) { if (!arm(el)) return; importJson($('#impdata').value); },
   sample() {
     if (!DEF.sampleTeams.length) { toast('No sample teams in defaults.json'); return; }
-    DEF.sampleTeams.forEach(t => S.teams.push({id: uid(), name: t.name, staff: t.staff || '', players: t.players.map(p => ({id: uid(), name: p.name, n: p.n || '', f: toArr(p.f), ph: p.ph || ''}))}));
-    save(); render(); toast('Sample teams added');
+    /* Existing sample teams (same name) are reset in place, so repeated clicks never create duplicates and games keep their team link */
+    let added = 0;
+    DEF.sampleTeams.forEach(t => {
+      const fresh = {name: t.name, staff: t.staff || '', players: t.players.map(p => ({id: uid(), name: p.name, n: p.n || '', f: toArr(p.f).filter(c => S.tags.some(x => x.code === c)), ph: p.ph || ''}))};
+      const ex = S.teams.find(x => x.name === t.name);
+      if (ex) Object.assign(ex, fresh); else { S.teams.push(Object.assign({id: uid()}, fresh)); added++; }
+    });
+    save(); render(); toast(added ? 'Sample teams added' : 'Sample teams reset');
   },
   async 'app-refresh'() {
     try {
