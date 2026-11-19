@@ -1,6 +1,6 @@
 // Cache-first service worker so the app works fully offline after the first load.
 // Bump VERSION whenever index.html or defaults.json changes to force clients to refresh the cache.
-const VERSION = 'sportpa-v24';
+const VERSION = 'sportpa-v26';
 const FILES = ['./', './index.html', './manifest.json', './defaults.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

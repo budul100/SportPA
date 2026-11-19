@@ -50,7 +50,7 @@
    "foulLimit": 3,
    "primary": "score",
    "keep": false,
-   "brkReset": true,
+   "brkReset": false,
    "goalTypes": [
     "Penalty corner",
     "Penalty stroke"
@@ -103,7 +103,7 @@
    "foulLimit": 3,
    "primary": "score",
    "keep": false,
-   "brkReset": true,
+   "brkReset": false,
    "goalTypes": [
     "Penalty corner",
     "Penalty stroke"
@@ -156,7 +156,7 @@
    "foulLimit": 3,
    "primary": "score",
    "keep": false,
-   "brkReset": true,
+   "brkReset": false,
    "goalTypes": [
     "Penalty (5 m)"
    ],
@@ -193,7 +193,7 @@
    "foulLimit": 3,
    "primary": "score",
    "keep": false,
-   "brkReset": true,
+   "brkReset": false,
    "goalTypes": [
     "Ace",
     "Block"
@@ -212,7 +212,7 @@
    "foulLimit": 5,
    "primary": "score",
    "keep": false,
-   "brkReset": true,
+   "brkReset": false,
    "goalTypes": [],
    "cards": []
   },
@@ -228,7 +228,7 @@
    "foulLimit": 3,
    "primary": "score",
    "keep": false,
-   "brkReset": true,
+   "brkReset": false,
    "goalTypes": [
     "Power play",
     "Shorthanded",
@@ -276,7 +276,7 @@
    "foulLimit": 3,
    "primary": "score",
    "keep": false,
-   "brkReset": true,
+   "brkReset": false,
    "goalTypes": [
     "7 m"
    ],
@@ -318,7 +318,7 @@
    "foulLimit": 3,
    "primary": "score",
    "keep": false,
-   "brkReset": true,
+   "brkReset": false,
    "goalTypes": [
     "Home run"
    ],

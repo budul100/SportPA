@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f1419">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SportPA">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -20,7 +22,7 @@ button.danger{border-color:var(--bad);color:var(--bad)}
 input,textarea,select{font:inherit;color:var(--text);background:#0c1117;border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:42px;width:100%}
 textarea{resize:vertical;min-height:90px}
 label{display:block;font-size:13px;color:var(--mute);margin:8px 0 3px}
-nav{display:flex;gap:6px;flex-wrap:wrap;padding:8px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+nav{display:flex;gap:6px;flex-wrap:wrap;padding:8px;padding-top:calc(8px + env(safe-area-inset-top));padding-left:calc(8px + env(safe-area-inset-left));padding-right:calc(8px + env(safe-area-inset-right));background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
 nav button{padding:6px 12px;min-height:40px}
 nav .sep{width:1px;background:var(--line);margin:0 4px}
 main{padding:12px;max-width:1700px;margin:0 auto}
@@ -215,7 +217,29 @@ function migrate(S) {
 }
 let storageOK = true, appVer = '';
 /* The version is the cache name of the service worker (VERSION in sw.js), so it shows what is really installed */
-function readVer() { if (!window.caches) return; caches.keys().then(k => { const v = (k.find(x => /^sportpa-v/.test(x)) || '').replace('sportpa-', ''); if (v !== appVer) { appVer = v; const el = $('#ver'); if (el) el.textContent = v; } }).catch(() => {}); }
+function readVer() {
+  if (!window.caches) return;
+  caches.keys().then(k => {
+    const v = (k.find(x => /^sportpa-v/.test(x)) || '').replace('sportpa-', '');
+    if (!v || v === appVer) return;
+    appVer = v;
+    document.querySelectorAll('.verv').forEach(el => { el.textContent = v; });
+  }).catch(() => {});
+}
+/* The cache is created asynchronously by the service worker (install), so on a first start or right after
+   "Clear app cache and reload" it does not exist yet when the page boots. Re-read whenever the worker changes state. */
+function watchVer() {
+  if (!('serviceWorker' in navigator)) return;
+  const sw = navigator.serviceWorker;
+  sw.ready.then(readVer).catch(() => {});
+  sw.addEventListener('controllerchange', readVer);
+  sw.register('sw.js').then(reg => {
+    const w = reg.installing || reg.waiting;
+    if (w) w.addEventListener('statechange', readVer);
+    reg.addEventListener('updatefound', () => { if (reg.installing) reg.installing.addEventListener('statechange', readVer); });
+  }).catch(() => {});
+  [1000, 3000, 8000].forEach(ms => setTimeout(readVer, ms));
+}
 function load() {
   const b = blank();
   try {
@@ -350,9 +374,9 @@ function parseRoster(text) {
 function nav() {
   const v = S.ui.view, g = cur();
   const b = (k, t, ti) => '<button data-act="view" data-v="' + k + '"' + (ti ? ' title="' + ti + '" aria-label="' + ti + '"' : '') + ' class="' + (v === k ? 'on' : '') + '">' + t + '</button>';
-  return '<nav><img class="brandimg" src="icon-192.png" alt="SportPA" title="SportPA"><span id="ver" class="ver">' + esc(appVer) + '</span>' + b('games', 'Games') + b('teams', 'Teams') + '<span class="sep"></span>' +
+  return '<nav><img class="brandimg" src="icon-192.png" alt="SportPA" title="SportPA"><span class="ver verv">' + esc(appVer) + '</span>' + b('games', 'Games') + b('teams', 'Teams') + '<span class="sep"></span>' +
     (g ? b('plan', 'Schedule') + b('checkin', 'Check-in') + b('intro', 'Intro') + b('play', 'Game') : '') +
-    '<span class="sep"></span>' + b('data', ico('disk'), 'Data') + b('settings', ico('gear'), 'Settings') +
+    '<span class="sep"></span>' + b('settings', ico('gear'), 'Settings') + b('data', ico('disk'), 'Data') +
     '<span class="navr">' + (g ? '<span class="mute small">' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</span>' : '') + '<b id="now" class="now"></b></span></nav>';
 }
 
@@ -605,7 +629,7 @@ function viewPlay() {
     '<div class="row"><button class="' + (S.ui.rb ? 'on' : '') + '" data-act="rbtoggle">Schedule</button><button class="' + (S.ui.evp ? 'on' : '') + '" data-act="evtoggle">Events</button></div>' +
     sub + '</div>' +
     '<div class="play ' + (S.ui.rb ? '' : 'norb') + '">' + col('home') + col('away') + '<aside class="side">' +
-    '<div class="card"><button class="clk ' + (g.clk ? 'run' : 'stop') + '" data-act="clk">' + (g.clk ? 'Play running (tap to stop)' : 'Play stopped (tap to resume)') + '</button><div id="timers" style="margin-top:8px">' + timersHtml(g) + '</div></div>' +
+    (g.tm.length ? '<div class="card"><button class="clk ' + (g.clk ? 'run' : 'stop') + '" data-act="clk">' + (g.clk ? 'Play running (tap to stop)' : 'Play stopped (tap to resume)') + '</button><div id="timers" style="margin-top:8px">' + timersHtml(g) + '</div></div>' : '') +
     (S.ui.rb ? rbPanel(g) : '') +
     (S.ui.evp ? '<div class="card"><h3>Events</h3>' + ev + '</div>' : '') + '</aside></div>';
 }
@@ -619,7 +643,7 @@ function viewData() {
     '<div style="margin-top:8px"><button class="danger" data-act="impdata">Import (replaces everything)</button></div>' + dataMsg + '</div></div>' +
     '<div><div class="card"><h3>Sample data</h3><div class="mute small">Fictional teams from defaults.json to try things out (with a duplicate number and a player without number).</div><div style="margin-top:8px"><button data-act="sample">Add sample teams</button></div></div>' +
     '<div class="card"><h3>Default sports</h3><div class="mute small">Presets come from defaults.json. This restores all sports that ship with the app to their preset values (own sports are kept). Existing games keep their settings.</div><div style="margin-top:8px"><button class="danger" data-act="defs-reset">Reset default sports</button></div></div>' +
-    '<div class="card"><h3>App version ' + esc(appVer || '(dev)') + '</h3><div class="mute small">If an installed copy keeps showing old behaviour: this clears the app cache and reloads it. Your teams, games and settings are kept.</div><div style="margin-top:8px"><button data-act="app-refresh">Clear app cache and reload</button></div></div>' +
+    '<div class="card"><h3>App version <span class="verv">' + esc(appVer || '…') + '</span></h3><div class="mute small">If an installed copy keeps showing old behaviour: this clears the app cache and reloads it. Your teams, games and settings are kept.</div><div style="margin-top:8px"><button data-act="app-refresh">Clear app cache and reload</button></div></div>' +
     '<div class="card"><h3>Delete everything</h3><button class="danger" data-act="wipe">Delete all data</button></div></div></div>';
 }
 let dataMsg = '';
@@ -781,8 +805,8 @@ const acts = {
     if (mode !== baseMode(sp) && !sp.keep) S.ui.mode = baseMode(sp);
     save(); render();
   },
-  undo() { const g = cur(); const e = g.ev.pop(); if (e && e.tm) g.tm = g.tm.filter(t => t.id !== e.tm); $('#toast').className = ''; save(); render(); },
-  evdel(el) { const g = cur(); const e = g.ev.find(x => x.id === el.dataset.id); if (e && e.tm) g.tm = g.tm.filter(t => t.id !== e.tm); g.ev = g.ev.filter(x => x.id !== el.dataset.id); save(); render(); },
+  undo() { const g = cur(); const e = g.ev.pop(); if (e && e.tm) g.tm = g.tm.filter(t => t.id !== e.tm); if (!g.tm.length) g.clk = false; $('#toast').className = ''; save(); render(); },
+  evdel(el) { const g = cur(); const e = g.ev.find(x => x.id === el.dataset.id); if (e && e.tm) g.tm = g.tm.filter(t => t.id !== e.tm); g.ev = g.ev.filter(x => x.id !== el.dataset.id); if (!g.tm.length) g.clk = false; save(); render(); },
   tmx(el) { const g = cur(); g.tm = g.tm.filter(t => t.id !== el.dataset.id); if (!g.tm.some(t => t.st === 'run')) g.clk = false; save(); render(); },
   /* data */
   exp() { const b = new Blob([JSON.stringify(S, null, 1)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'sportpa-backup-' + today() + '.json'; document.body.appendChild(a); a.click(); a.remove(); },
@@ -886,7 +910,7 @@ setInterval(() => {
   updateAlarm();
 }, 250);
 
-if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* ignore */ } }
+if (/^https?:$/.test(location.protocol)) { try { watchVer(); } catch (e) { /* ignore */ } }
 async function boot() {
   try {
     const r = await fetch('defaults.json', {cache: 'no-cache'});
