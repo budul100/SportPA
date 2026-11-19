@@ -1,0 +1,482 @@
+{
+ "defaultSport": "field-hockey",
+ "tags": [
+  {
+   "code": "G",
+   "label": "Goalkeeper",
+   "c": 0,
+   "top": true
+  },
+  {
+   "code": "B",
+   "label": "Backup Goalkeeper",
+   "c": 1,
+   "top": true
+  },
+  {
+   "code": "C",
+   "label": "Captain",
+   "c": 2,
+   "top": false
+  }
+ ],
+ "plan": {
+  "pre": [
+   "Last meeting",
+   "Standings",
+   "Top scorers"
+  ],
+  "brk": [
+   "Sponsors",
+   "Gameday update",
+   "Next home game",
+   "Notices"
+  ],
+  "post": [
+   "Goal scorers",
+   "Next home game"
+  ]
+ },
+ "sports": [
+  {
+   "id": "indoor-hockey",
+   "name": "Indoor Hockey",
+   "periods": 4,
+   "label": "Quarter",
+   "otLabel": "OT",
+   "score": "Goal",
+   "scoring": true,
+   "fouls": false,
+   "foulLimit": 3,
+   "primary": "score",
+   "keep": false,
+   "brkReset": true,
+   "goalTypes": [
+    "Penalty corner",
+    "Penalty stroke"
+   ],
+   "cards": [
+    {
+     "id": "green",
+     "name": "Green",
+     "c": 0,
+     "durs": [
+      60
+     ],
+     "outAt": 0
+    },
+    {
+     "id": "yellow",
+     "name": "Yellow",
+     "c": 1,
+     "durs": [
+      120,
+	  180,
+	  240,
+      300,
+	  360,
+	  420,
+	  480,
+	  540,
+	  600
+     ],
+     "outAt": 2
+    },
+    {
+     "id": "red",
+     "name": "Red",
+     "c": 2,
+     "durs": [],
+     "outAt": 1
+    }
+   ]
+  },
+  {
+   "id": "field-hockey",
+   "name": "Field Hockey",
+   "periods": 4,
+   "label": "Quarter",
+   "otLabel": "OT",
+   "score": "Goal",
+   "scoring": true,
+   "fouls": false,
+   "foulLimit": 3,
+   "primary": "score",
+   "keep": false,
+   "brkReset": true,
+   "goalTypes": [
+    "Penalty corner",
+    "Penalty stroke"
+   ],
+   "cards": [
+    {
+     "id": "green",
+     "name": "Green",
+     "c": 0,
+     "durs": [
+      60
+     ],
+     "outAt": 0
+    },
+    {
+     "id": "yellow",
+     "name": "Yellow",
+     "c": 1,
+     "durs": [
+      120,
+	  180,
+	  240,
+      300,
+	  360,
+	  420,
+	  480,
+	  540,
+	  600
+     ],
+     "outAt": 2
+    },
+    {
+     "id": "red",
+     "name": "Red",
+     "c": 2,
+     "durs": [],
+     "outAt": 1
+    }
+   ]
+  },
+  {
+   "id": "water-polo",
+   "name": "Water Polo",
+   "periods": 4,
+   "label": "Quarter",
+   "otLabel": "OT",
+   "score": "Goal",
+   "scoring": true,
+   "fouls": true,
+   "foulLimit": 3,
+   "primary": "score",
+   "keep": false,
+   "brkReset": true,
+   "goalTypes": [
+    "Penalty (5 m)"
+   ],
+   "cards": [
+    {
+     "id": "excl",
+     "name": "Exclusion",
+     "c": 4,
+     "durs": [
+      20
+     ],
+     "outAt": 3
+    },
+    {
+     "id": "red",
+     "name": "Red",
+     "c": 2,
+     "durs": [
+      240
+     ],
+     "outAt": 1
+    }
+   ]
+  },
+  {
+   "id": "volleyball",
+   "name": "Volleyball",
+   "periods": 5,
+   "label": "Set",
+   "otLabel": "OT",
+   "score": "Point",
+   "scoring": true,
+   "fouls": false,
+   "foulLimit": 3,
+   "primary": "score",
+   "keep": false,
+   "brkReset": true,
+   "goalTypes": [
+    "Ace",
+    "Block"
+   ],
+   "cards": []
+  },
+  {
+   "id": "basketball",
+   "name": "Basketball",
+   "periods": 4,
+   "label": "Quarter",
+   "otLabel": "OT",
+   "score": "Basket",
+   "scoring": true,
+   "fouls": true,
+   "foulLimit": 5,
+   "primary": "score",
+   "keep": false,
+   "brkReset": true,
+   "goalTypes": [],
+   "cards": []
+  },
+  {
+   "id": "ice-hockey",
+   "name": "Ice Hockey",
+   "periods": 3,
+   "label": "Period",
+   "otLabel": "OT",
+   "score": "Goal",
+   "scoring": true,
+   "fouls": false,
+   "foulLimit": 3,
+   "primary": "score",
+   "keep": false,
+   "brkReset": true,
+   "goalTypes": [
+    "Power play",
+    "Shorthanded",
+    "Penalty shot",
+    "Empty net"
+   ],
+   "cards": [
+    {
+     "id": "minor",
+     "name": "Minor",
+     "c": 3,
+     "durs": [
+      120,
+      240
+     ],
+     "outAt": 0
+    },
+    {
+     "id": "major",
+     "name": "Major",
+     "c": 4,
+     "durs": [
+      300
+     ],
+     "outAt": 2
+    },
+    {
+     "id": "gm",
+     "name": "Game misconduct",
+     "c": 2,
+     "durs": [],
+     "outAt": 1
+    }
+   ]
+  },
+  {
+   "id": "handball",
+   "name": "Handball",
+   "periods": 2,
+   "label": "Half",
+   "otLabel": "OT",
+   "score": "Goal",
+   "scoring": true,
+   "fouls": false,
+   "foulLimit": 3,
+   "primary": "score",
+   "keep": false,
+   "brkReset": true,
+   "goalTypes": [
+    "7 m"
+   ],
+   "cards": [
+    {
+     "id": "yellow",
+     "name": "Yellow",
+     "c": 1,
+     "durs": [],
+     "outAt": 0
+    },
+    {
+     "id": "susp",
+     "name": "2 min",
+     "c": 4,
+     "durs": [
+      120
+     ],
+     "outAt": 3
+    },
+    {
+     "id": "red",
+     "name": "Red",
+     "c": 2,
+     "durs": [],
+     "outAt": 1
+    }
+   ]
+  },
+  {
+   "id": "baseball",
+   "name": "Baseball",
+   "periods": 9,
+   "label": "Inning",
+   "otLabel": "OT",
+   "score": "Run",
+   "scoring": true,
+   "fouls": false,
+   "foulLimit": 3,
+   "primary": "score",
+   "keep": false,
+   "brkReset": true,
+   "goalTypes": [
+    "Home run"
+   ],
+   "cards": []
+  }
+ ],
+ "sampleTeams": [
+  {
+   "name": "Sample Red",
+   "staff": "Coach Example",
+   "players": [
+    {
+     "n": "1",
+     "name": "Anna Redman",
+     "f": [
+      "T"
+     ],
+     "ph": ""
+    },
+    {
+     "n": "2",
+     "name": "Ben Rose",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "3",
+     "name": "Clara Roth",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "4",
+     "name": "David Redman",
+     "f": [
+      "K"
+     ],
+     "ph": ""
+    },
+    {
+     "n": "5",
+     "name": "Eva Rose",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "6",
+     "name": "Felix Roth",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "10",
+     "name": "Greta Redman",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "11",
+     "name": "Hanna Rose",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "12",
+     "name": "Ida Roth",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "7",
+     "name": "Jonas Redman",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "",
+     "name": "Kim Redman",
+     "f": [],
+     "ph": ""
+    }
+   ]
+  },
+  {
+   "name": "Sample Blue",
+   "staff": "Coach Example",
+   "players": [
+    {
+     "n": "1",
+     "name": "Anna Blum",
+     "f": [
+      "T"
+     ],
+     "ph": ""
+    },
+    {
+     "n": "2",
+     "name": "Ben Bell",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "3",
+     "name": "Clara Blank",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "4",
+     "name": "David Blum",
+     "f": [
+      "K"
+     ],
+     "ph": ""
+    },
+    {
+     "n": "5",
+     "name": "Eva Bell",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "6",
+     "name": "Felix Blank",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "10",
+     "name": "Greta Blum",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "11",
+     "name": "Hanna Bell",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "12",
+     "name": "Ida Blank",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "7",
+     "name": "Jonas Blum",
+     "f": [],
+     "ph": ""
+    },
+    {
+     "n": "",
+     "name": "Kim Blum",
+     "f": [],
+     "ph": ""
+    }
+   ]
+  }
+ ]
+}

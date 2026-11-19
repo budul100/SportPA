@@ -51,6 +51,8 @@ input.dup{border-color:var(--warn);background:#3a2d12}
 .intro .n{font-size:44px;font-weight:800;min-width:90px;text-align:right}
 .intro .nm{font-size:32px;font-weight:700;line-height:1.1}
 .intro .ph{font-size:18px;color:var(--acc);font-weight:500}
+.intro .tgs{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+.intro .tgs .badge{font-size:24px;min-width:44px;padding:2px 8px;border-radius:8px}
 .intro.done{opacity:.35}
 .intro.done .nm{text-decoration:line-through}
 .intro .dt{font-size:20px;font-weight:500;color:#c9d6e4;white-space:pre-wrap;margin-top:4px}
@@ -128,28 +130,13 @@ nav button .ico{width:22px;height:22px}
 /* ---------- defaults ---------- */
 const KEY = 'sportpa-v1', OLD_KEY = 'pa-lineup-v1';
 const COLORS = ['#3ecf8e', '#4da3ff', '#ffb020', '#ff5a5f', '#b388ff', '#26c6da'];
-const DEF_TAGS = [
-  {code: 'T', label: 'Goalkeeper', c: 0, top: true},
-  {code: 'E', label: 'E', c: 1, top: false},
-  {code: 'K', label: 'Captain', c: 2, top: false}
-];
-const sp0 = (id, name, periods, label, score, pen, fouls, foulLimit) => ({id, name, periods, label, score, pen, fouls, foulLimit});
-const DEF_SPORTS = [
-  sp0('indoor-hockey', 'Indoor Hockey', 2, 'Half', 'Goal', [60, 120, 300], false, 3),
-  sp0('field-hockey', 'Field Hockey', 4, 'Quarter', 'Goal', [120, 300, 600], false, 3),
-  sp0('water-polo', 'Water Polo', 4, 'Quarter', 'Goal', [20], true, 3),
-  sp0('volleyball', 'Volleyball', 5, 'Set', 'Point', [], false, 3),
-  sp0('basketball', 'Basketball', 4, 'Quarter', 'Basket', [], true, 5),
-  sp0('ice-hockey', 'Ice Hockey', 3, 'Period', 'Goal', [120, 300], false, 3),
-  sp0('handball', 'Handball', 2, 'Half', 'Goal', [120], false, 3),
-  sp0('baseball', 'Baseball', 9, 'Inning', 'Run', [], false, 3)
-];
+const CARD_COLORS = ['#3ecf8e', '#ffd23f', '#ff5a5f', '#4da3ff', '#ffb020', '#e8eef5'];
+/* Presets (tags, sports, default schedule, sample teams) live in defaults.json.
+   This minimal fallback is only used if that file cannot be loaded (e.g. app opened via file://). */
+const FALLBACK = {defaultSport: 'generic', tags: [], plan: {pre: [], brk: [], post: []}, sampleTeams: [],
+  sports: [{id: 'generic', name: 'Generic sport', periods: 2, label: 'Half', otLabel: 'OT', score: 'Goal', scoring: true, fouls: false, foulLimit: 3, primary: 'score', keep: false, brkReset: true, goalTypes: [], cards: []}]};
+let DEF = FALLBACK, defaultsOK = true;
 const PH = [['pre', 'Pre-game'], ['brk', 'Breaks'], ['post', 'Post-game']];
-const DEF_PLAN = {
-  pre: ['Last meeting', 'Standings', 'Top scorers', 'Sponsors and notices'],
-  brk: ['Score update', 'Goal scorers', 'Sponsors', 'Next home game', 'Notices'],
-  post: ['Final score', 'Goal scorers', 'Thank you', 'Next home game']
-};
 const OLD_SPORT_IDS = {hockey_halle: 'indoor-hockey', hockey_feld: 'field-hockey', wasserball: 'water-polo', volleyball: 'volleyball', basketball: 'basketball'};
 
 const $ = s => document.querySelector(s);
@@ -170,19 +157,36 @@ const ico = n => '<svg class="ico" viewBox="0 0 24 24" width="20" height="20" fi
 
 /* ---------- state ---------- */
 function blank() {
-  return {teams: [], games: [], tags: clone(DEF_TAGS), sports: clone(DEF_SPORTS), templates: {}, cur: null,
-    ui: {view: 'games', team: null, gk: true, side: 'pre', mode: 'goal', pen: null, phase: 'brk', rb: true, evp: false, hold: false, coachFirst: false,
-      draft: {sport: DEF_SPORTS[1].id, home: '', away: '', date: today()}}};
+  const sp = DEF.sports.find(x => x.id === DEF.defaultSport) || DEF.sports[0];
+  return {teams: [], games: [], tags: clone(DEF.tags), sports: clone(DEF.sports).map(normSport), templates: {}, cur: null,
+    ui: {view: 'games', team: null, gk: true, side: 'pre', mode: 'goal', card: null, pen: null, gt: '', phase: 'brk', rb: true, evp: false, hold: false, coachFirst: false,
+      draft: {sport: sp.id, home: '', away: '', date: today()}}};
 }
 function mkPlan(spId, S) {
   const t = S.templates[spId], out = {};
-  PH.forEach(([k]) => { const src = t ? t[k] : DEF_PLAN[k].map(x => ({t: x, d: ''})); out[k] = src.map(i => ({id: uid(), t: i.t, d: i.d || ''})); });
+  PH.forEach(([k]) => { const src = t ? t[k] : DEF.plan[k].map(x => ({t: x, d: ''})); out[k] = src.map(i => ({id: uid(), t: i.t, d: i.d || ''})); });
   return out;
+}
+/* Brings a sport definition (old or new format) to the current model */
+function normSport(s) {
+  if (!Array.isArray(s.cards)) {
+    const pen = Array.isArray(s.pen) ? s.pen : [];
+    s.cards = pen.length ? [{id: 'pen', name: 'Penalty', c: 2, durs: pen.slice(), outAt: 0}] : [];
+  }
+  delete s.pen;
+  s.cards.forEach(c => { if (!c.id) c.id = uid(); if (!Array.isArray(c.durs)) c.durs = []; c.outAt = Math.max(0, parseInt(c.outAt, 10) || 0); c.c = (c.c || 0) % CARD_COLORS.length; });
+  if (s.otLabel == null) s.otLabel = 'OT';
+  if (s.scoring == null) s.scoring = true;
+  s.fouls = !!s.fouls; s.foulLimit = Math.max(1, parseInt(s.foulLimit, 10) || 3);
+  if (s.primary !== 'foul') s.primary = 'score';
+  if (!Array.isArray(s.goalTypes)) s.goalTypes = [];
+  return s;
 }
 const toArr = f => Array.isArray(f) ? f : String(f || '').split('').filter(Boolean);
 function migrate(S) {
-  if (!S.tags) S.tags = clone(DEF_TAGS);
-  if (!S.sports) S.sports = clone(DEF_SPORTS);
+  if (!S.tags) S.tags = clone(DEF.tags);
+  if (!S.sports) S.sports = clone(DEF.sports);
+  S.sports.forEach(normSport);
   if (!S.templates) S.templates = {};
   const sid = id => OLD_SPORT_IDS[id] || id;
   S.teams.forEach(t => t.players.forEach(p => { p.f = toArr(p.f); }));
@@ -191,6 +195,7 @@ function migrate(S) {
     ['home', 'away'].forEach(s => g.roster[s].forEach(e => { e.f = toArr(e.f); }));
     g.sport = sid(g.sport);
     if (!g.sp) g.sp = clone(S.sports.find(x => x.id === g.sport) || S.sports[0]);
+    normSport(g.sp);
     if (!g.plan) g.plan = mkPlan(g.sport, S);
     if (g.ref == null) g.ref = '';
   });
@@ -202,6 +207,8 @@ function migrate(S) {
   if (S.ui.evp == null) S.ui.evp = false;
   if (S.ui.hold == null) S.ui.hold = false;
   if (S.ui.coachFirst == null) S.ui.coachFirst = false;
+  if (S.ui.card === undefined) S.ui.card = null;
+  if (S.ui.gt == null) S.ui.gt = '';
   return S;
 }
 let storageOK = true;
@@ -213,11 +220,27 @@ function load() {
   } catch (e) { storageOK = false; }
   return b;
 }
-let S = load();
+let S = null; /* set in boot() once defaults.json is loaded */
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { storageOK = false; } }
-const cur = () => S.games.find(g => g.id === S.cur) || null;
+const cur = () => (S && S.games.find(g => g.id === S.cur)) || null;
 const team = () => S.teams.find(t => t.id === S.ui.team) || null;
 const spOf = g => g.sp || S.sports[0];
+/* period text: regular periods as "Quarter 2/4", beyond the last one as overtime "OT1", "OT2" ... */
+const perTxt = (sp, p) => p <= sp.periods ? sp.label + ' ' + p + '/' + sp.periods : sp.otLabel + (p - sp.periods);
+const perShort = (sp, p) => p <= sp.periods ? p + '/' + sp.periods : sp.otLabel + (p - sp.periods);
+/* entry modes a sport offers; baseMode is the one the app returns to (the sport's primary record type) */
+const modesOf = sp => [sp.scoring && 'goal', sp.fouls && 'foul', sp.cards.length && 'pen'].filter(Boolean);
+const baseMode = sp => { const m = modesOf(sp); return m.includes(sp.primary === 'foul' ? 'foul' : 'goal') ? (sp.primary === 'foul' ? 'foul' : 'goal') : (m[0] || null); };
+const cardOf = (sp, id) => sp.cards.find(c => c.id === id) || null;
+const cardCol = c => CARD_COLORS[(c.c || 0) % CARD_COLORS.length];
+const cardCnt = (g, id, cardId) => g.ev.filter(e => e.t === 'pen' && e.e === id && (e.c || '') === cardId).length;
+/* Why a player is excluded (foul limit or a card with an exclusion threshold), '' if not */
+function outWhy(g, sp, id) {
+  if (id === '?') return '';
+  if (sp.fouls && cnt(g, id, 'foul') >= sp.foulLimit) return 'Foul ' + sp.foulLimit;
+  const c = sp.cards.find(x => x.outAt > 0 && cardCnt(g, id, x.id) >= x.outAt);
+  return c ? c.name : '';
+}
 
 /* ---------- helpers ---------- */
 const tagOf = c => S.tags.find(t => t.code === c);
@@ -332,7 +355,7 @@ function nav() {
 function viewGames() {
   const d = S.ui.draft;
   const opt = sel => '<option value="">Choose team</option>' + S.teams.map(t => '<option value="' + t.id + '"' + (t.id === sel ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('');
-  const list = S.games.map(g => '<div class="card row"><div class="grow"><b>' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</b><div class="mute small">' + esc(g.date) + ' · ' + esc(spOf(g).name) + ' · ' + score(g, 'home') + ':' + score(g, 'away') + '</div></div>' +
+  const list = S.games.map(g => '<div class="card row"><div class="grow"><b>' + esc(g.home.name) + ' vs ' + esc(g.away.name) + '</b><div class="mute small">' + esc(g.date) + ' · ' + esc(spOf(g).name) + (spOf(g).scoring ? ' · ' + score(g, 'home') + ':' + score(g, 'away') : '') + '</div></div>' +
     '<button class="pri" data-act="gsel" data-id="' + g.id + '" title="Open game" aria-label="Open game">' + ico('play') + '</button><button class="danger" data-act="gdel" data-id="' + g.id + '" title="Delete game" aria-label="Delete game">' + ico('x') + '</button></div>').join('') || '<div class="mute">No games yet.</div>';
   return '<h2>Games</h2><div class="grid2"><div><div class="card"><h3>New game</h3>' +
     '<label>Sport</label><select data-inp="draft" data-k="sport">' + S.sports.map(s => '<option value="' + esc(s.id) + '"' + (d.sport === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select>' +
@@ -367,21 +390,41 @@ function viewTeams() {
   return '<h2>Teams</h2><div class="grid2" style="grid-template-columns:260px 1fr"><div>' + list + '</div><div>' + ed + imp + '</div></div>';
 }
 
+function sportCard(s) {
+  const id = esc(s.id), inp = k => 'data-inp="sp" data-id="' + id + '" data-k="' + k + '"';
+  const tog = (act, on, txt, v) => '<button class="' + (on ? 'on' : '') + '" data-act="' + act + '" data-id="' + id + '"' + (v ? ' data-v="' + v + '"' : '') + '>' + txt + '</button>';
+  const base = baseMode(s), lc = s.label.toLowerCase();
+  const cards = s.cards.map(c => '<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><input style="width:120px" placeholder="Name" value="' + esc(c.name) + '" data-inp="card" data-id="' + id + '" data-cid="' + esc(c.id) + '" data-k="name">' +
+    '<button data-act="card-col" data-id="' + id + '" data-cid="' + esc(c.id) + '" style="background:' + cardCol(c) + ';min-width:44px" title="Colour" aria-label="Colour"></button>' +
+    '<input class="grow" style="width:auto" placeholder="Seconds, e.g. 300, 600" value="' + esc(c.durs.join(', ')) + '" data-inp="card" data-id="' + id + '" data-cid="' + esc(c.id) + '" data-k="durs">' +
+    '<input type="number" min="0" style="width:72px" title="Out at" value="' + c.outAt + '" data-inp="card" data-id="' + id + '" data-cid="' + esc(c.id) + '" data-k="outAt">' +
+    '<button class="danger" data-act="card-del" data-id="' + id + '" data-cid="' + esc(c.id) + '" title="Delete card" aria-label="Delete card">' + ico('x') + '</button></div>').join('');
+  return '<div class="card" style="background:var(--panel2)"><div class="row"><input class="grow" style="width:auto" value="' + esc(s.name) + '" ' + inp('name') + '><button class="danger" data-act="sp-del" data-id="' + id + '" title="Delete sport" aria-label="Delete sport">' + ico('x') + '</button></div>' +
+    '<div class="grid2" style="margin-top:4px"><div>' +
+    '<label>Number of periods</label><input type="number" min="1" value="' + s.periods + '" ' + inp('periods') + '>' +
+    '<label>Period name (Half, Quarter, Set, Inning ...)</label><input value="' + esc(s.label) + '" ' + inp('label') + '>' +
+    '<label>Overtime label (OT gives OT1, OT2 ...; always available after the last ' + esc(lc) + ')</label><input value="' + esc(s.otLabel) + '" ' + inp('otLabel') + '>' +
+    '<label>Reset the Breaks checklist for every ' + esc(lc) + ' (otherwise checks stay until you reset them)</label>' + tog('sp-brk', s.brkReset !== false, s.brkReset !== false ? 'Reset per ' + esc(lc) + ': on' : 'Reset per ' + esc(lc) + ': off') +
+    '</div><div>' +
+    '<label>Scoring (Goal, Point, Run ...)</label><div class="row">' + tog('sp-scoring', s.scoring, s.scoring ? 'Tracked' : 'Off') + '<input class="grow" style="width:auto" value="' + esc(s.score) + '" ' + inp('score') + '></div>' +
+    '<label>Fouls per player</label><div class="row">' + tog('sp-fouls', s.fouls, s.fouls ? 'Tracked' : 'Off') +
+    '<input type="number" min="1" style="width:90px" value="' + s.foulLimit + '" ' + inp('foulLimit') + '><span class="mute small">fouls until out</span></div>' +
+    '<label>Primary record type (the Game tab starts in it and returns to it after each entry)</label><div class="row">' +
+    '<button class="' + (base === 'goal' ? 'on' : '') + '" data-act="sp-prim" data-id="' + id + '" data-v="score"' + (s.scoring ? '' : ' disabled') + '>' + esc(s.score) + '</button>' +
+    '<button class="' + (base === 'foul' ? 'on' : '') + '" data-act="sp-prim" data-id="' + id + '" data-v="foul"' + (s.fouls ? '' : ' disabled') + '>Foul</button></div>' +
+    '<label>Stay in the selected mode after each entry (otherwise it switches back to the primary record type)</label>' + tog('sp-keep', s.keep, s.keep ? 'Keep mode: on' : 'Keep mode: off') +
+    '</div></div>' +
+    '<label>Special ' + esc(s.score.toLowerCase()) + ' types, comma separated (e.g. Penalty corner, Home run; empty = regular only)</label><input value="' + esc(s.goalTypes.join(', ')) + '" ' + inp('goalTypes') + '>' +
+    '<label>Penalty cards: name, colour, suspension in seconds (comma separated for several options, empty = no suspension), out at (0 = never, 1 = red card, 2 = second card ...)</label>' + cards +
+    '<button data-act="card-add" data-id="' + id + '">+ Card</button></div>';
+}
 function viewSettings() {
   const tags = S.tags.map((t, i) => '<div class="row" style="margin-bottom:6px;flex-wrap:nowrap"><input style="width:80px" value="' + esc(t.code) + '" data-inp="tag" data-i="' + i + '" data-k="code" placeholder="Code">' +
     '<input class="grow" style="width:auto" value="' + esc(t.label) + '" data-inp="tag" data-i="' + i + '" data-k="label" placeholder="Label">' +
     '<button data-act="tag-col" data-i="' + i + '" style="background:' + COLORS[t.c % COLORS.length] + ';min-width:44px"></button>' +
     '<button class="' + (t.top ? 'on' : '') + '" data-act="tag-top" data-i="' + i + '">Priority</button>' +
     '<button class="danger" data-act="tag-del" data-i="' + i + '" title="Delete tag" aria-label="Delete tag">' + ico('x') + '</button></div>').join('');
-  const sports = S.sports.map(s => '<div class="card" style="background:var(--panel2)"><div class="row"><input class="grow" style="width:auto" value="' + esc(s.name) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="name"><button class="danger" data-act="sp-del" data-id="' + esc(s.id) + '" title="Delete sport" aria-label="Delete sport">' + ico('x') + '</button></div>' +
-    '<div class="grid2" style="margin-top:4px"><div><label>Number of periods</label><input type="number" min="1" value="' + s.periods + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="periods">' +
-    '<label>Period name (Half, Quarter, Set, Inning ...)</label><input value="' + esc(s.label) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="label">' +
-    '<label>Scoring name (Goal, Point, Run ...)</label><input value="' + esc(s.score) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="score"></div>' +
-    '<div><label>Penalty durations in seconds, comma separated (empty = no penalty timers)</label><input value="' + esc(s.pen.join(', ')) + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="pen">' +
-    '<label>Fouls per player</label><div class="row"><button class="' + (s.fouls ? 'on' : '') + '" data-act="sp-fouls" data-id="' + esc(s.id) + '">' + (s.fouls ? 'Tracked' : 'Off') + '</button>' +
-    '<input type="number" min="1" style="width:90px" value="' + s.foulLimit + '" data-inp="sp" data-id="' + esc(s.id) + '" data-k="foulLimit"><span class="mute small">fouls until out</span></div>' +
-    '<label>Stay in foul / penalty mode after each entry (otherwise it switches back to ' + esc(s.score.toLowerCase()) + ')</label><button class="' + (s.keep ? 'on' : '') + '" data-act="sp-keep" data-id="' + esc(s.id) + '">' + (s.keep ? 'Keep mode: on' : 'Keep mode: off') + '</button>' +
-    '<label>Reset the Breaks checklist for every ' + esc(s.label.toLowerCase()) + ' (otherwise checks stay until you reset them)</label><button class="' + (s.brkReset !== false ? 'on' : '') + '" data-act="sp-brk" data-id="' + esc(s.id) + '">' + (s.brkReset !== false ? 'Reset per ' + esc(s.label.toLowerCase()) + ': on' : 'Reset per ' + esc(s.label.toLowerCase()) + ': off') + '</button></div></div></div>').join('');
+  const sports = S.sports.map(sportCard).join('');
   return '<h2>Settings</h2><div class="grid2"><div><div class="card"><h3>Player tags</h3><div class="mute small" style="margin-bottom:8px">Short codes shown next to a player, e.g. goalkeeper or captain. The code is also what the roster import recognises. Priority tags are listed first in lineups.</div>' + tags +
     '<button data-act="tag-add" style="margin-top:6px">+ Tag</button></div></div>' +
     '<div><div class="card"><h3>Sports</h3><div class="mute small" style="margin-bottom:8px">Changes apply to new games. Existing games keep the settings they were created with.</div>' + sports + '<button data-act="sp-add">+ Sport</button></div></div></div>';
@@ -442,10 +485,12 @@ function viewIntro() {
     return tabs + (R.map((n, i) => '<button class="intro ' + (g.ann['ref:' + i] ? 'done' : '') + '" data-act="ann" data-id="ref:' + i + '"><span class="nm">' + esc(n) + '</span></button>').join('') ||
       '<div class="mute">No officials entered yet (Check-in tab).</div>');
   }
-  const coaches = staffList(g, side).map((n, i) => '<button class="intro ' + (g.ann['coach:' + side + ':' + i] ? 'done' : '') + '" data-act="ann" data-id="coach:' + side + ':' + i + '"><span class="n" style="font-size:22px;color:var(--mute)">Coach</span><span class="nm">' + esc(n) + '</span></button>').join('');
   const L = ordered(g.roster[side].filter(e => e.on));
-  const rows = L.map(e => '<button class="intro ' + (g.ann[e.id] ? 'done' : '') + '" data-act="ann" data-id="' + e.id + '"><span class="n">' + esc(e.n || '–') + '</span><span><span class="nm">' + esc(e.name) + '</span> ' +
-    e.f.map(badge).join(' ') + (e.ph ? '<div class="ph">' + esc(e.ph) + '</div>' : '') + '</span></button>').join('') || '<div class="mute">No players marked as present.</div>';
+  /* tags come first, right before the number ("captain with the 11"); the tag column has a fixed width so the numbers line up */
+  const tw = Math.max(0, ...L.map(e => e.f.length)), tgs = html => tw ? '<span class="tgs" style="min-width:' + (tw * 50 + (tw - 1) * 6) + 'px">' + html + '</span>' : '';
+  const coaches = staffList(g, side).map((n, i) => '<button class="intro ' + (g.ann['coach:' + side + ':' + i] ? 'done' : '') + '" data-act="ann" data-id="coach:' + side + ':' + i + '">' + tgs('') + '<span class="n" style="font-size:22px;color:var(--mute)">Coach</span><span class="nm">' + esc(n) + '</span></button>').join('');
+  const rows = L.map(e => '<button class="intro ' + (g.ann[e.id] ? 'done' : '') + '" data-act="ann" data-id="' + e.id + '">' + tgs(e.f.map(badge).join('')) + '<span class="n">' + esc(e.n || '–') + '</span><span><span class="nm">' + esc(e.name) + '</span>' +
+    (e.ph ? '<div class="ph">' + esc(e.ph) + '</div>' : '') + '</span></button>').join('') || '<div class="mute">No players marked as present.</div>';
   return tabs + (S.ui.coachFirst ? coaches + rows : rows + coaches);
 }
 
@@ -463,7 +508,7 @@ function shortWho(g, side, id) {
 }
 function tmClass(t) { if (t.st === 'done') return 'done'; if (t.st === 'wait') return 'wait'; const g = cur(); return (g && g.clk && t.rem <= Math.min(10000, t.dur * 0.25)) ? 'warn' : ''; }
 function tmLabel(t) {
-  return '<b>' + (t.side === 'home' ? 'H' : 'A') + ' ' + esc(t.label) + '</b>' +
+  return '<b>' + (t.side === 'home' ? 'H' : 'A') + ' ' + esc(t.label) + '</b>' + (t.cn ? ' <span class="small mute">' + esc(t.cn) + '</span>' : '') +
     (t.st === 'done' ? '<div class="small" style="color:#ffd0d2;font-weight:700">Announce return!</div>' : t.st === 'wait' ? '<div class="small" style="color:var(--acc);font-weight:700">Waiting for restart</div>' : '');
 }
 function tmBtns(t) {
@@ -474,43 +519,87 @@ function timersHtml(g) {
   return g.tm.map(t => '<div class="tm ' + tmClass(t) + '" data-tid="' + t.id + '"><div>' + tmLabel(t) + '</div><div class="tt">' + fmtT(t.rem) + '</div><div class="row tmb" style="flex-wrap:nowrap">' + tmBtns(t) + '</div></div>').join('') || '<div class="mute small">No active penalties</div>';
 }
 function pcard(g, side, e, sp) {
-  const goals = cnt(g, e.id, 'goal'), fouls = cnt(g, e.id, 'foul'), pens = cnt(g, e.id, 'pen');
-  const out = sp.fouls && fouls >= sp.foulLimit, fw = sp.fouls && fouls === sp.foulLimit - 1 && fouls > 0;
-  return '<button class="pc ' + side + (out ? ' out' : fw ? ' fw' : '') + '" data-act="tap" data-side="' + side + '" data-id="' + e.id + '"><span class="n">' + esc(e.n || '–') + '</span><span class="nm">' + esc(e.name) +
+  const goals = cnt(g, e.id, 'goal'), fouls = cnt(g, e.id, 'foul'), why = outWhy(g, sp, e.id);
+  const foulOut = sp.fouls && fouls >= sp.foulLimit, fw = sp.fouls && fouls === sp.foulLimit - 1 && fouls > 0;
+  const cp = sp.cards.map(c => { const n = cardCnt(g, e.id, c.id); return n ? '<span class="pill" style="background:' + cardCol(c) + '33;color:' + cardCol(c) + '">' + esc(c.name) + ' ' + n + '</span>' : ''; }).join('');
+  const legacy = g.ev.filter(x => x.t === 'pen' && x.e === e.id && !cardOf(sp, x.c)).length;
+  return '<button class="pc ' + side + (why ? ' out' : fw ? ' fw' : '') + '" data-act="tap" data-side="' + side + '" data-id="' + e.id + '"><span class="n">' + esc(e.n || '–') + '</span><span class="nm">' + esc(e.name) +
     '<span class="bd">' + e.f.map(c => badge(c) + ' ').join('') +
-    (goals ? '<span class="pill p-g">' + esc(sp.score) + ' ' + goals + '</span>' : '') + (fouls ? '<span class="pill p-f">Foul ' + fouls + (out ? ' OUT' : '') + '</span>' : '') + (pens ? '<span class="pill p-p">Pen ' + pens + '</span>' : '') + '</span></span></button>';
+    (goals ? '<span class="pill p-g">' + esc(sp.score) + ' ' + goals + '</span>' : '') + (fouls ? '<span class="pill p-f">Foul ' + fouls + (foulOut ? ' OUT' : '') + '</span>' : '') + cp +
+    (legacy ? '<span class="pill p-p">Pen ' + legacy + '</span>' : '') + (why && !foulOut ? '<span class="pill p-p">OUT</span>' : '') + '</span></span></button>';
+}
+/* Per event: running score after a goal, running foul count of the player, running card count of the player */
+function evInfo(g) {
+  let h = 0, a = 0; const fc = {}, pc = {}, m = {};
+  g.ev.forEach(e => {
+    if (e.t === 'goal') { if (e.s === 'home') h++; else a++; m[e.id] = h + ':' + a; }
+    else if (e.t === 'foul') { fc[e.e] = (fc[e.e] || 0) + 1; m[e.id] = fc[e.e]; }
+    else if (e.t === 'pen') { const k = e.e + '|' + (e.c || ''); pc[k] = (pc[k] || 0) + 1; m[e.id] = pc[k]; }
+  });
+  return m;
+}
+/* Event text: what happened plus the detail in brackets (score, foul number, card) */
+function evText(sp, e, n) {
+  if (e.t === 'goal') return esc(sp.score) + (e.k ? ' · ' + esc(e.k) : '') + ' (' + n + ')';
+  if (e.t === 'foul') return 'Foul (' + n + '/' + sp.foulLimit + (n >= sp.foulLimit ? ' OUT' : '') + ')';
+  const c = cardOf(sp, e.c), bits = [];
+  if (c || e.cn) bits.push(esc(c ? c.name : e.cn));
+  if (e.d) bits.push(fmtDur(e.d));
+  if (c && c.outAt > 0 && n >= c.outAt) bits.push('OUT');
+  return 'Penalty' + (bits.length ? ' (' + bits.join(', ') + ')' : '');
 }
 const rKey = (g, ph, id) => ph + (ph === 'brk' && spOf(g).brkReset !== false ? g.per : '') + '|' + id;
 function rbPanel(g) {
   const ph = S.ui.phase === 'post' ? 'post' : 'brk', items = g.plan[ph], sp = spOf(g);
   const done = items.filter(i => g.chk[rKey(g, ph, i.id)]).length;
   return '<div class="card"><div class="tabs">' + PH.filter(p => p[0] !== 'pre').map(p => '<button class="' + (ph === p[0] ? 'on' : '') + '" data-act="phase" data-p="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
-    '<div class="mute small" style="margin-bottom:8px">' + done + ' of ' + items.length + ' announced' + (ph === 'brk' ? ' · after ' + esc(sp.label.toLowerCase()) + ' ' + g.per : '') + '</div>' +
+    '<div class="mute small" style="margin-bottom:8px">' + done + ' of ' + items.length + ' announced' + (ph === 'brk' ? ' · after ' + esc(g.per <= sp.periods ? sp.label.toLowerCase() + ' ' + g.per : sp.otLabel + (g.per - sp.periods)) : '') + '</div>' +
     items.map(i => { const d = g.chk[rKey(g, ph, i.id)]; return '<div class="ritem ' + (d ? 'done' : '') + '" data-act="rchk" data-id="' + i.id + '"><span class="badge">' + (d ? '✓' : '') + '</span><div><div class="rt">' + esc(i.t || '(untitled)') + '</div>' + (i.d ? '<div class="rd">' + esc(i.d) + '</div>' : '') + '</div></div>'; }).join('') +
     '<div class="row" style="margin-top:8px"><input id="qa" class="grow" style="width:auto" placeholder="Add item ..."><button data-act="p-qadd" title="Add item" aria-label="Add item">' + ico('plus') + '</button></div>' +
     '<div class="row" style="margin-top:8px"><button data-act="rreset" title="Reset checks" aria-label="Reset checks">' + ico('reset') + '</button><button data-act="view" data-v="plan" title="Edit schedule" aria-label="Edit schedule">' + ico('edit') + '</button></div></div>';
 }
 function viewPlay() {
   const g = cur(), sp = spOf(g);
-  if ((S.ui.mode === 'foul' && !sp.fouls) || (S.ui.mode === 'pen' && !sp.pen.length)) S.ui.mode = 'goal';
-  if (!sp.pen.includes(S.ui.pen)) S.ui.pen = sp.pen[0] || null;
+  if (!modesOf(sp).includes(S.ui.mode)) S.ui.mode = baseMode(sp);
+  if (S.ui.mode === 'pen') {
+    if (!cardOf(sp, S.ui.card)) S.ui.card = sp.cards[0].id;
+    const c = cardOf(sp, S.ui.card); if (!c.durs.includes(S.ui.pen)) S.ui.pen = c.durs[0] || null;
+  }
+  if (S.ui.gt && !sp.goalTypes.includes(S.ui.gt)) S.ui.gt = '';
   const mb = (k, t) => '<button class="' + (S.ui.mode === k ? 'on' : '') + '" data-act="mode" data-m="' + k + '">' + t + '</button>';
   const unk = side => g.ev.filter(e => e.s === side && e.e === '?' && e.t === 'goal').length;
-  const col = side => '<div class="col ' + side + '"><h3><span>' + (side === 'home' ? 'Home' : 'Away') + ': ' + esc(g[side].name) + '</span><span>' + score(g, side) + '</span></h3><div class="pcards">' +
+  const col = side => '<div class="col ' + side + '"><h3><span>' + (side === 'home' ? 'Home' : 'Away') + ': ' + esc(g[side].name) + '</span><span>' + (sp.scoring ? score(g, side) : '') + '</span></h3><div class="pcards">' +
     ordered(g.roster[side].filter(e => e.on)).map(e => pcard(g, side, e, sp)).join('') +
     '<button class="pc ' + side + ' unk" data-act="tap" data-side="' + side + '" data-id="?"><span class="n">?</span><span class="nm">Unknown<span class="bd">' + (unk(side) ? '<span class="pill p-g">' + esc(sp.score) + ' ' + unk(side) + '</span>' : '') + '</span></span></button></div></div>';
-  const ev = g.ev.slice(-8).reverse().map((e, i) => '<div class="ev' + (i === 0 ? ' evlast' : '') + '"><span>' + hms(e.ts) + ' · ' + e.p + '/' + sp.periods + ' · ' + (e.s === 'home' ? 'H' : 'A') + ' ' + esc(who(g, e)) + ' · ' + ({goal: esc(sp.score), foul: 'Foul', pen: 'Pen ' + fmtDur(e.d || 0)}[e.t]) + '</span><button data-act="evdel" data-id="' + e.id + '">×</button></div>').join('') || '<div class="mute small">No events yet</div>';
+  const nfo = evInfo(g);
+  const ev = g.ev.slice(-8).reverse().map((e, i) => '<div class="ev' + (i === 0 ? ' evlast' : '') + '"><span>' + hms(e.ts) + ' · ' + esc(perShort(sp, e.p)) + ' · ' + (e.s === 'home' ? 'H' : 'A') + ' ' + esc(who(g, e)) + ' · ' + evText(sp, e, nfo[e.id]) + '</span><button data-act="evdel" data-id="' + e.id + '">×</button></div>').join('') || '<div class="mute small">No events yet</div>';
   const scorers = side => {
-    const m = {}; g.ev.filter(e => e.t === 'goal' && e.s === side).forEach(e => { m[e.e] = (m[e.e] || 0) + 1; });
+    const m = {}; g.ev.filter(e => e.t === 'goal' && e.s === side).forEach(e => { const o = m[e.e] || (m[e.e] = {n: 0, k: {}}); o.n++; if (e.k) o.k[e.k] = (o.k[e.k] || 0) + 1; });
     const key = id => { if (id === '?') return 1e10; const e = g.roster[side].find(x => x.id === id); return e ? numOf(e) : 1e9; };
-    return Object.keys(m).sort((x, y) => (m[y] - m[x]) || (key(x) - key(y))).map(id => shortWho(g, side, id) + (m[id] > 1 ? ' (' + m[id] + ')' : '')).join(', ') || '–';
+    const det = o => { const p = []; if (o.n > 1) p.push(o.n); Object.keys(o.k).forEach(k => p.push((o.k[k] > 1 ? o.k[k] + ' ' : '') + k)); return p.length ? ' (' + p.join(', ') + ')' : ''; };
+    return Object.keys(m).sort((x, y) => (m[y].n - m[x].n) || (key(x) - key(y))).map(id => shortWho(g, side, id) + det(m[id])).join(', ') || '–';
   };
-  return '<div class="card top"><div class="row"><button data-act="per" data-d="-1">−</button><b style="font-size:20px">' + esc(sp.label) + ' ' + g.per + '/' + sp.periods + '</b><button data-act="per" data-d="1">+</button>' +
+  const subStyle = ' style="flex-basis:100%;border-top:1px solid var(--line);padding-top:8px"';
+  let sub = '';
+  if (S.ui.mode === 'goal' && sp.goalTypes.length) {
+    sub = '<div class="row"' + subStyle + '><span class="mute small">Type</span><button class="' + (!S.ui.gt ? 'on' : '') + '" data-act="gtype" data-t="">Regular</button>' +
+      sp.goalTypes.map(t => '<button class="' + (S.ui.gt === t ? 'on' : '') + '" data-act="gtype" data-t="' + esc(t) + '">' + esc(t) + '</button>').join('') + '</div>';
+  } else if (S.ui.mode === 'pen') {
+    const c = cardOf(sp, S.ui.card);
+    sub = '<div class="row"' + subStyle + '><span class="mute small">Card</span>' +
+      sp.cards.map(k => '<button style="border-color:' + cardCol(k) + ';' + (k.id === c.id ? 'background:' + cardCol(k) + ';color:#04121f;font-weight:700' : 'color:' + cardCol(k)) + '" data-act="pcard" data-id="' + esc(k.id) + '">' + esc(k.name) + '</button>').join('') +
+      (c.durs.length ? '<span class="mute small">Suspension</span>' + c.durs.map(d => '<button class="' + (S.ui.pen === d ? 'on' : '') + '" data-act="pdur" data-d="' + d + '">' + fmtDur(d) + '</button>').join('') : '<span class="mute small">No suspension</span>') +
+      (c.outAt ? '<span class="mute small">' + (c.outAt === 1 ? 'Player is out' : 'Player is out at card ' + c.outAt) + '</span>' : '') + '</div>';
+  }
+  const modes = modesOf(sp);
+  const scoreBar = '<div class="sc"><div class="sh" style="text-align:right"><div class="tn" style="color:var(--home)">' + esc(g.home.name) + '</div>' + (sp.scoring ? '<div class="scl">' + esc(scorers('home')) + '</div>' : '') + '</div>' +
+    '<div class="sn">' + (sp.scoring ? score(g, 'home') + ' : ' + score(g, 'away') : 'vs') + '</div><div class="sh"><div class="tn" style="color:var(--away)">' + esc(g.away.name) + '</div>' + (sp.scoring ? '<div class="scl">' + esc(scorers('away')) + '</div>' : '') + '</div></div>';
+  return '<div class="card top"><div class="row"><button data-act="per" data-d="-1">−</button><b style="font-size:20px">' + esc(perTxt(sp, g.per)) + '</b><button data-act="per" data-d="1">+</button>' +
     '<span style="width:1px;height:32px;background:var(--line);margin:0 4px"></span>' +
-    mb('goal', esc(sp.score)) + (sp.fouls ? mb('foul', 'Foul') : '') + (sp.pen.length ? mb('pen', 'Penalty') : '') + '</div>' +
-    '<div class="sc"><div class="sh" style="text-align:right"><div class="tn" style="color:var(--home)">' + esc(g.home.name) + '</div><div class="scl">' + esc(scorers('home')) + '</div></div><div class="sn">' + score(g, 'home') + ' : ' + score(g, 'away') + '</div><div class="sh"><div class="tn" style="color:var(--away)">' + esc(g.away.name) + '</div><div class="scl">' + esc(scorers('away')) + '</div></div></div>' +
+    (modes.includes('goal') ? mb('goal', esc(sp.score)) : '') + (modes.includes('foul') ? mb('foul', 'Foul') : '') + (modes.includes('pen') ? mb('pen', 'Penalty') : '') + '</div>' +
+    scoreBar +
     '<div class="row"><button class="' + (S.ui.rb ? 'on' : '') + '" data-act="rbtoggle">Schedule</button><button class="' + (S.ui.evp ? 'on' : '') + '" data-act="evtoggle">Events</button></div>' +
-    (S.ui.mode === 'pen' ? '<div class="row" style="flex-basis:100%;border-top:1px solid var(--line);padding-top:8px"><span class="mute small">Penalty duration</span>' + sp.pen.map(d => '<button class="' + (S.ui.pen === d ? 'on' : '') + '" data-act="pdur" data-d="' + d + '">' + fmtDur(d) + '</button>').join('') + '</div>' : '') + '</div>' +
+    sub + '</div>' +
     '<div class="play ' + (S.ui.rb ? '' : 'norb') + '">' + col('home') + col('away') + '<aside class="side">' +
     '<div class="card"><button class="clk ' + (g.clk ? 'run' : 'stop') + '" data-act="clk">' + (g.clk ? 'Play running (tap when play stops)' : 'Play stopped (tap when play resumes)') + '</button><div id="timers" style="margin-top:8px">' + timersHtml(g) + '</div></div>' +
     (S.ui.rb ? rbPanel(g) : '') +
@@ -524,7 +613,8 @@ function viewData() {
     '<label>Load backup file (replaces everything)</label><input type="file" accept=".json,application/json" id="impfile">' +
     '<label>Or paste JSON</label><textarea id="impdata" placeholder="{...}"></textarea>' +
     '<div style="margin-top:8px"><button class="danger" data-act="impdata">Import (replaces everything)</button></div>' + dataMsg + '</div></div>' +
-    '<div><div class="card"><h3>Sample data</h3><div class="mute small">Two fictional teams to try things out (with a duplicate number and a player without number).</div><div style="margin-top:8px"><button data-act="sample">Add sample teams</button></div></div>' +
+    '<div><div class="card"><h3>Sample data</h3><div class="mute small">Fictional teams from defaults.json to try things out (with a duplicate number and a player without number).</div><div style="margin-top:8px"><button data-act="sample">Add sample teams</button></div></div>' +
+    '<div class="card"><h3>Default sports</h3><div class="mute small">Presets come from defaults.json. This restores all sports that ship with the app to their preset values (own sports are kept). Existing games keep their settings.</div><div style="margin-top:8px"><button class="danger" data-act="defs-reset">Reset default sports</button></div></div>' +
     '<div class="card"><h3>Delete everything</h3><button class="danger" data-act="wipe">Delete all data</button></div></div></div>';
 }
 let dataMsg = '';
@@ -534,7 +624,7 @@ const VIEWS = {games: viewGames, teams: viewTeams, settings: viewSettings, plan:
 /* ---------- render ---------- */
 let wl = null;
 async function wake() { try { if ('wakeLock' in navigator && !wl) { wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => { wl = null; }); } } catch (e) { /* not available */ } }
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S.ui.view === 'play') wake(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S && S.ui.view === 'play') wake(); });
 function render() {
   if (!cur() && ['plan', 'checkin', 'intro', 'play'].includes(S.ui.view)) S.ui.view = 'games';
   const y = window.scrollY, sideEl = document.querySelector('.side'), sy = sideEl ? sideEl.scrollTop : 0;
@@ -549,7 +639,10 @@ function render() {
 const findE = (g, side, id) => g.roster[side].find(e => e.id === id);
 const planItem = (g, ph, id) => g.plan[ph].find(i => i.id === id);
 const acts = {
-  view(el) { dataMsg = ''; if (el.dataset.v === 'play' && S.ui.view !== 'play' && S.ui.phase === 'pre') S.ui.phase = 'brk'; S.ui.view = el.dataset.v; save(); render(); },
+  view(el) {
+    dataMsg = ''; if (el.dataset.v === 'play' && S.ui.view !== 'play') { if (S.ui.phase === 'pre') S.ui.phase = 'brk'; S.ui.mode = baseMode(spOf(cur())); S.ui.gt = ''; }
+    S.ui.view = el.dataset.v; save(); render();
+  },
   /* teams */
   tsel(el) { S.ui.team = el.dataset.id; impMsg = ''; save(); render(); },
   tdel(el) { if (!arm(el)) return; S.teams = S.teams.filter(t => t.id !== S.ui.team); S.ui.team = null; save(); render(); },
@@ -576,11 +669,23 @@ const acts = {
   },
   'tag-col'(el) { const t = S.tags[+el.dataset.i]; t.c = (t.c + 1) % COLORS.length; save(); render(); },
   'tag-top'(el) { const t = S.tags[+el.dataset.i]; t.top = !t.top; save(); render(); },
-  'sp-add'() { S.sports.push(sp0('sp-' + uid(), 'New sport', 2, 'Half', 'Goal', [], false, 3)); save(); render(); },
+  'sp-add'() { S.sports.push(normSport({id: 'sp-' + uid(), name: 'New sport', periods: 2, label: 'Half', score: 'Goal'})); save(); render(); },
   'sp-del'(el) { if (!arm(el)) return; if (S.sports.length < 2) { toast('Keep at least one sport'); return; } S.sports = S.sports.filter(s => s.id !== el.dataset.id); save(); render(); },
   'sp-brk'(el) { const x = S.sports.find(q => q.id === el.dataset.id); x.brkReset = x.brkReset === false; save(); render(); },
   'sp-keep'(el) { const x = S.sports.find(q => q.id === el.dataset.id); x.keep = !x.keep; save(); render(); },
   'sp-fouls'(el) { const s = S.sports.find(x => x.id === el.dataset.id); s.fouls = !s.fouls; save(); render(); },
+  'sp-scoring'(el) { const s = S.sports.find(x => x.id === el.dataset.id); s.scoring = !s.scoring; save(); render(); },
+  'sp-prim'(el) { const s = S.sports.find(x => x.id === el.dataset.id); s.primary = el.dataset.v; save(); render(); },
+  'card-add'(el) { const s = S.sports.find(x => x.id === el.dataset.id); s.cards.push({id: uid(), name: '', c: s.cards.length % CARD_COLORS.length, durs: [], outAt: 0}); save(); render(); },
+  'card-col'(el) { const c = S.sports.find(x => x.id === el.dataset.id).cards.find(x => x.id === el.dataset.cid); c.c = (c.c + 1) % CARD_COLORS.length; save(); render(); },
+  'card-del'(el) { const s = S.sports.find(x => x.id === el.dataset.id); s.cards = s.cards.filter(x => x.id !== el.dataset.cid); save(); render(); },
+  'defs-reset'(el) {
+    if (!arm(el)) return;
+    const ids = new Set(DEF.sports.map(x => x.id)), mine = S.sports.filter(x => !ids.has(x.id));
+    S.sports = clone(DEF.sports).map(normSport).concat(mine);
+    if (!S.sports.find(x => x.id === S.ui.draft.sport)) S.ui.draft.sport = S.sports[0].id;
+    save(); render(); toast('Default sports restored');
+  },
   /* games */
   newgame() {
     const d = S.ui.draft, th = S.teams.find(t => t.id === d.home), ta = S.teams.find(t => t.id === d.away), sp = S.sports.find(s => s.id === d.sport) || S.sports[0];
@@ -623,7 +728,7 @@ const acts = {
     const g = cur(), order = ['pre', 'ref', 'away', 'home'], names = {pre: 'Pre-game', ref: 'Officials', away: 'Away team', home: 'Home team'};
     const open = sd => introIds(g, sd).find(x => !g.ann[x]);
     const nextTab = from => { const k = order.indexOf(from); for (let n = 1; n < order.length; n++) { const sd = order[(k + n) % order.length]; if (open(sd)) return sd; } return null; };
-    const goGame = () => { S.ui.view = 'play'; if (S.ui.phase === 'pre') S.ui.phase = 'brk'; save(); render(); window.scrollTo(0, 0); toast('Intro done: game on'); };
+    const goGame = () => { S.ui.view = 'play'; if (S.ui.phase === 'pre') S.ui.phase = 'brk'; S.ui.mode = baseMode(spOf(g)); S.ui.gt = ''; save(); render(); window.scrollTo(0, 0); toast('Intro done: game on'); };
     const jump = sd => { S.ui.side = sd; save(); render(); window.scrollTo({top: 0, behavior: 'smooth'}); toast('Next: ' + names[sd]); };
     const side = S.ui.side, id = open(side);
     if (!id) { const sd = nextTab(side); if (sd) jump(sd); else goGame(); return; }
@@ -637,7 +742,9 @@ const acts = {
   /* game */
   mode(el) { S.ui.mode = el.dataset.m; save(); render(); },
   pdur(el) { S.ui.pen = parseInt(el.dataset.d, 10); save(); render(); },
-  per(el) { const g = cur(), sp = spOf(g); g.per = Math.max(1, Math.min(sp.periods + 3, g.per + parseInt(el.dataset.d, 10))); save(); render(); },
+  pcard(el) { S.ui.card = el.dataset.id; save(); render(); },
+  gtype(el) { S.ui.gt = el.dataset.t; save(); render(); },
+  per(el) { const g = cur(); g.per = Math.max(1, Math.min(99, g.per + parseInt(el.dataset.d, 10))); save(); render(); },
   clk() { const g = cur(); g.clk = !g.clk; if (g.clk) startWaiting(g); lastTick = performance.now(); save(); render(); },
   'tm-start'(el) {
     const g = cur(), t = g.tm.find(x => x.id === el.dataset.id); if (!t) return;
@@ -646,17 +753,27 @@ const acts = {
   },
   tap(el) {
     const g = cur(), sp = spOf(g), side = el.dataset.side, id = el.dataset.id, mode = S.ui.mode;
+    if (!mode) return;
     const ent = id === '?' ? {n: '?', name: 'Unknown'} : findE(g, side, id);
     const nm = (ent.n ? '#' + ent.n + ' ' : '') + ent.name, sd = side === 'home' ? 'Home' : 'Away';
-    if (mode === 'goal') { g.ev.push({id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'goal'}); toast(sp.score + ' ' + sd + ': ' + nm + ' (' + score(g, 'home') + ':' + score(g, 'away') + ')', true); }
-    else if (mode === 'foul') { if (id === '?') return; g.ev.push({id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'foul'}); toast('Foul ' + sd + ': ' + nm + ' (' + cnt(g, id, 'foul') + ')', true); }
-    else if (mode === 'pen') {
-      const dur = S.ui.pen || sp.pen[0], tid = uid();
-      g.tm.push({id: tid, side, label: id === '?' ? '?' : (ent.n ? '#' + ent.n + ' ' : '') + lastName(ent.name), dur: dur * 1000, rem: dur * 1000, st: 'wait'});
-      g.ev.push({id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'pen', d: dur, tm: tid});
-      toast('Penalty ' + fmtDur(dur) + ' ' + sd + ': ' + nm + ' (starts when play resumes)', true);
+    if (mode === 'goal') {
+      const k = sp.goalTypes.includes(S.ui.gt) ? S.ui.gt : '', e = {id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'goal'};
+      if (k) e.k = k;
+      g.ev.push(e); S.ui.gt = '';
+      toast(sp.score + (k ? ' · ' + k : '') + ' ' + sd + ': ' + nm + ' (' + score(g, 'home') + ':' + score(g, 'away') + ')', true);
+    } else if (mode === 'foul') {
+      if (id === '?') return;
+      g.ev.push({id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'foul'});
+      toast('Foul ' + sd + ': ' + nm + ' (' + cnt(g, id, 'foul') + '/' + sp.foulLimit + ')' + (cnt(g, id, 'foul') >= sp.foulLimit ? ' OUT' : ''), true);
+    } else if (mode === 'pen') {
+      const c = cardOf(sp, S.ui.card) || sp.cards[0], dur = c.durs.includes(S.ui.pen) ? S.ui.pen : (c.durs[0] || 0), tid = dur ? uid() : null;
+      if (tid) g.tm.push({id: tid, side, label: id === '?' ? '?' : (ent.n ? '#' + ent.n + ' ' : '') + lastName(ent.name), cn: c.name, dur: dur * 1000, rem: dur * 1000, st: 'wait'});
+      const e = {id: uid(), ts: Date.now(), p: g.per, s: side, e: id, t: 'pen', c: c.id, cn: c.name, d: dur};
+      if (tid) e.tm = tid;
+      g.ev.push(e);
+      toast(c.name + (dur ? ' ' + fmtDur(dur) : '') + ' ' + sd + ': ' + nm + (outWhy(g, sp, id) ? ' OUT' : '') + (dur ? ' (starts when play resumes)' : ''), true);
     }
-    if (mode !== 'goal' && !sp.keep) S.ui.mode = 'goal';
+    if (mode !== baseMode(sp) && !sp.keep) S.ui.mode = baseMode(sp);
     save(); render();
   },
   undo() { const g = cur(); const e = g.ev.pop(); if (e && e.tm) g.tm = g.tm.filter(t => t.id !== e.tm); $('#toast').className = ''; save(); render(); },
@@ -667,9 +784,9 @@ const acts = {
   async expcopy() { try { await navigator.clipboard.writeText(JSON.stringify(S)); toast('Copied'); } catch (e) { toast('Copy not possible'); } },
   impdata(el) { if (!arm(el)) return; importJson($('#impdata').value); },
   sample() {
-    const nm = ['Anna', 'Ben', 'Clara', 'David', 'Eva', 'Felix', 'Greta', 'Hanna', 'Ida', 'Jonas'];
-    const mk = (name, ls) => ({id: uid(), name, staff: 'Coach Example', players: nm.map((n, i) => ({id: uid(), name: n + ' ' + ls[i % ls.length], n: String(i === 9 ? 7 : i + 1 + (i > 5 ? 3 : 0)), f: i === 0 ? ['T'] : i === 3 ? ['K'] : [], ph: ''})).concat([{id: uid(), name: 'Kim ' + ls[0], n: '', f: [], ph: ''}])});
-    S.teams.push(mk('Sample Red', ['Redman', 'Rose', 'Roth']), mk('Sample Blue', ['Blum', 'Bell', 'Blank'])); save(); render(); toast('Sample teams added');
+    if (!DEF.sampleTeams.length) { toast('No sample teams in defaults.json'); return; }
+    DEF.sampleTeams.forEach(t => S.teams.push({id: uid(), name: t.name, staff: t.staff || '', players: t.players.map(p => ({id: uid(), name: p.name, n: p.n || '', f: toArr(p.f), ph: p.ph || ''}))}));
+    save(); render(); toast('Sample teams added');
   },
   wipe(el) { if (!arm(el)) return; S = blank(); save(); render(); }
 };
@@ -694,8 +811,14 @@ const inps = {
   sp(el) {
     const s = S.sports.find(x => x.id === el.dataset.id), k = el.dataset.k, v = el.value;
     if (k === 'periods' || k === 'foulLimit') s[k] = Math.max(1, parseInt(v, 10) || 1);
-    else if (k === 'pen') s.pen = v.split(/[,\s]+/).map(x => parseInt(x, 10)).filter(x => x > 0);
+    else if (k === 'goalTypes') s.goalTypes = [...new Set(v.split(',').map(x => x.trim()).filter(Boolean))];
     else s[k] = v;
+  },
+  card(el) {
+    const c = S.sports.find(x => x.id === el.dataset.id).cards.find(x => x.id === el.dataset.cid), k = el.dataset.k, v = el.value;
+    if (k === 'durs') c.durs = [...new Set(v.split(/[,\s]+/).map(x => parseInt(x, 10)).filter(x => x > 0))];
+    else if (k === 'outAt') c.outAt = Math.max(0, parseInt(v, 10) || 0);
+    else c[k] = v;
   }
 };
 document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (el && acts[el.dataset.act]) acts[el.dataset.act](el, e); });
@@ -737,7 +860,19 @@ setInterval(() => {
 }, 250);
 
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* ignore */ } }
-render();
+async function boot() {
+  try {
+    const r = await fetch('defaults.json', {cache: 'no-cache'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if (!d || !Array.isArray(d.sports) || !d.sports.length || !Array.isArray(d.tags) || !d.plan) throw new Error('format');
+    d.sampleTeams = Array.isArray(d.sampleTeams) ? d.sampleTeams : [];
+    DEF = d;
+  } catch (e) { defaultsOK = false; }
+  S = load(); render();
+  if (!defaultsOK) toast('defaults.json could not be loaded, using minimal built-in defaults');
+}
+boot();
 </script>
 </body>
 </html>

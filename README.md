@@ -1,4 +1,8 @@
-# SportPA
+<p align="center">
+  <img src="icon-192.png" alt="SportPA logo" width="128" height="128">
+</p>
+
+<h1 align="center">SportPA</h1>
 
 An offline-first web app for public address (PA) announcers at amateur sports events. It replaces handwritten lineup sheets with one screen per phase of the game: your announcement schedule, roster check-in, lineup introductions and live game tracking.
 
@@ -9,10 +13,13 @@ It runs entirely in the browser (plain HTML, CSS and JavaScript, no build step, 
 - **Schedule**: your announcement script per game (sponsors, standings, notices), split into pre-game, breaks and post-game. Every item can carry a detail text. Pre-game items are checked off in the Intro tab, breaks and post-game in the Game tab. The Breaks checklist can be reset for every period or carried over (set per sport, see *Settings*). Save a schedule as a template per sport.
 - **Check-in**: confirm who is present, change numbers on the spot, set tags (goalkeeper, captain, ...), add pronunciation hints, enter coaches and officials. Duplicate numbers are highlighted.
 - **Intro**: large, readable introduction lists: Pre-game items (the match as "Home vs Away" plus your own items from the Schedule, e.g. last meeting, standings, top scorers), officials, away team and home team. Tap to strike off a name, or use the *Announce next* button to strike off the next one and scroll on. Coaches can be listed before or after the players.
-- **Game**: both rosters side by side. Tap a player to log a goal (or foul or penalty, depending on the mode). Running score, scorers in the top bar (sorted by goals, then number), undo. The event log shows time with seconds, period (e.g. `2/2`), player and action.
-- **Penalty timers**: assign a penalty and a player, the countdown starts only when you tell the app that play has resumed. Visual warning before the end, full-screen flashing at expiry until you confirm, so a return to play is never forgotten. The clock stops automatically when no penalty is left. The time of a penalty event is set to the moment its countdown actually starts.
-- **Fouls** (optional per sport): counted per player with a limit, e.g. water polo. Per sport you can choose whether the app stays in foul or penalty mode after an entry ("Keep mode") or switches back to scoring.
-- **Generic by design**: sports, number and names of periods (halves, quarters, sets, innings, ...), scoring name, penalty durations and player tags are all configurable.
+- **Game**: both rosters side by side. Tap a player to log a goal, foul or penalty, depending on the mode. Which of these a sport records, and which one is primary, is set per sport. Running score, scorers in the top bar (sorted by goals, then number, with special goal types), undo. The event log shows time with seconds, period (e.g. `2/4` or `OT1`), player and action with the detail in brackets: the score after a goal, the foul number (`3/5`), or the card and duration of a penalty.
+- **Special goals**: per sport you can define goal types (penalty corner, home run, ...). Pick the type before tapping the scorer; it applies to that one entry.
+- **Overtime**: after the last regular period the period buttons continue with `OT1`, `OT2`, ... (label configurable per sport).
+- **Penalty cards**: per sport you define cards (e.g. green, yellow, red) with a colour, optional suspension durations and an exclusion threshold (`1` = red card, the player is marked out, like the fifth foul in basketball). A card without duration only records the event.
+- **Penalty timers**: assign a penalty card and a player, the countdown starts only when you tell the app that play has resumed. Visual warning before the end, full-screen flashing at expiry until you confirm, so a return to play is never forgotten. The clock stops automatically when no penalty is left. The time of a penalty event is set to the moment its countdown actually starts.
+- **Fouls** (optional per sport): counted per player with a limit, e.g. water polo or basketball. Per sport you can choose whether scoring and fouls are tracked at all, which one is primary (the mode the Game tab starts in and returns to), and whether the app stays in the selected mode after an entry ("Keep mode").
+- **Generic by design**: sports, number and names of periods (halves, quarters, sets, innings, ...), scoring name, goal types, penalty cards and player tags are all configurable. The presets live in `defaults.json`.
 - **Roster import**: paste a table copied from Word, a PDF or a web page.
 - **Current time** with seconds is always visible.
 - Works offline once installed, keeps the screen awake during the game where the browser supports it.
@@ -40,7 +47,14 @@ Players without a number are imported without one. The import warns about duplic
 ## Settings
 
 - **Tags**: short codes with a label and colour, e.g. `T` goalkeeper, `K` captain. Tags marked *Priority* are listed first in lineups.
-- **Sports**: name, number of periods, period name, scoring name, penalty durations in seconds and optional foul tracking with a limit, *Keep mode* (stay in foul or penalty mode after an entry) and whether the Breaks checklist is reset for every period. Defaults are provided for indoor and field hockey, water polo, volleyball, basketball, ice hockey, handball and baseball. A game keeps the settings it was created with.
+- **Sports**: name, number of periods, period name, overtime label, scoring (on/off, name), foul tracking (on/off, limit), primary record type, *Keep mode*, special goal types, penalty cards and whether the Breaks checklist is reset for every period. Defaults are provided for indoor and field hockey, water polo, volleyball, basketball, ice hockey, handball and baseball. A game keeps the settings it was created with.
+- **Penalty cards** (per sport): name, colour, suspension durations in seconds (comma separated for several options, e.g. `300, 600` for a yellow card; empty = no suspension) and *out at* (`0` = never, `1` = red card, `2` = out with the second card of that type).
+
+## Presets (`defaults.json`)
+
+Default tags, sports (including cards and goal types), the default schedule and the sample teams are read from `defaults.json` at startup, so you can adapt them without touching the code. The file is cached by the service worker like the app itself.
+
+Presets only apply to new data. Existing installs keep their stored sports; *Data > Reset default sports* overwrites the shipped sports with the current presets (own sports are kept, existing games are not changed). If the file cannot be loaded (for example when opening `index.html` directly via `file://`), the app falls back to one minimal generic sport and shows a notice.
 
 ## Deployment
 
@@ -73,7 +87,7 @@ After the first load the app works without any network connection. Open it once 
 
 ### Updating
 
-When you change `index.html`, increase `VERSION` in `sw.js` (for example `sportpa-v6`), otherwise installed copies keep serving the old cached version. Devices pick up the new version the next time they open the app online (a second restart may be needed).
+When you change `index.html` or `defaults.json`, increase `VERSION` in `sw.js` (for example `sportpa-v16`), otherwise installed copies keep serving the old cached version. Devices pick up the new version the next time they open the app online (a second restart may be needed).
 
 ## Data and backup
 
@@ -88,6 +102,7 @@ Everything is stored in the browser's local storage on the device. Nothing is ev
 | File | Purpose |
 | --- | --- |
 | `index.html` | The whole app (markup, styles, code) |
+| `defaults.json` | Presets: tags, sports, default schedule, sample teams |
 | `sw.js` | Service worker, cache-first, makes the app work offline |
 | `manifest.json` | Web app manifest for installing the app |
 | `icon-192.png`, `icon-512.png` | App icons (the 192 px icon is also shown in the top left corner of the app) |
